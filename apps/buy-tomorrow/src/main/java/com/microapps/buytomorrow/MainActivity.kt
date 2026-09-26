@@ -45,6 +45,10 @@ private fun BuyTomorrowScreen() {
     var waitHours by remember { mutableStateOf(48) }
 
     fun save(next: List<Wish>) { wishes = next; saveWishes(context, next) }
+    fun updateStatus(target: Wish, status: String) {
+        save(wishes.map { current -> if (current.createdAt == target.createdAt) current.copy(status = status) else current })
+    }
+
     val saved = wishes.filter { it.status == "skipped" }.sumOf { it.amount }
 
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -60,18 +64,22 @@ private fun BuyTomorrowScreen() {
         }
         Button(onClick = {
             val value = amount.replace(',', '.').toDoubleOrNull() ?: return@Button
-            if (name.isNotBlank()) { save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours)); name = ""; amount = "" }
+            if (name.isNotBlank()) {
+                save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
+                name = ""
+                amount = ""
+            }
         }) { Text("Отложить покупку") }
 
-        wishes.sortedByDescending { it.createdAt }.forEachIndexed { index, wish ->
+        wishes.sortedByDescending { it.createdAt }.forEach { wish ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(wish.name, style = MaterialTheme.typography.titleMedium)
                     Text("${wish.amount} · пауза ${wish.waitHours} ч · ${wish.status}")
                     if (wish.status == "waiting") {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { save(wishes.toMutableList().also { it[index] = wish.copy(status = "skipped") }) }) { Text("Передумал") }
-                            Button(onClick = { save(wishes.toMutableList().also { it[index] = wish.copy(status = "bought") }) }) { Text("Купил") }
+                            Button(onClick = { updateStatus(wish, "skipped") }) { Text("Передумал") }
+                            Button(onClick = { updateStatus(wish, "bought") }) { Text("Купил") }
                         }
                     }
                 }
@@ -96,6 +104,14 @@ private fun loadWishes(context: Context): List<Wish> = runCatching {
 
 private fun saveWishes(context: Context, wishes: List<Wish>) {
     val array = JSONArray()
-    wishes.forEach { w -> array.put(JSONObject().apply { put("name", w.name); put("amount", w.amount); put("createdAt", w.createdAt); put("waitHours", w.waitHours); put("status", w.status) }) }
+    wishes.forEach { w ->
+        array.put(JSONObject().apply {
+            put("name", w.name)
+            put("amount", w.amount)
+            put("createdAt", w.createdAt)
+            put("waitHours", w.waitHours)
+            put("status", w.status)
+        })
+    }
     context.getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("wishes", array.toString()).apply()
 }
