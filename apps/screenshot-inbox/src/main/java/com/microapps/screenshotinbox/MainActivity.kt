@@ -16,13 +16,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,13 +35,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.microapps.designsystem.AppHeader
+import com.microapps.designsystem.GlassCard
+import com.microapps.designsystem.GradientButton
+import com.microapps.designsystem.NeonBackdrop
+import com.microapps.designsystem.NeonCyan
+import com.microapps.designsystem.SecondaryButton
+import com.microapps.designsystem.StatusPill
+import com.microapps.designsystem.TextPrimary
+import com.microapps.designsystem.TextSecondary
+import com.microapps.designsystem.UnifiedAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { ScreenshotInboxScreen() } }
+        setContent { UnifiedAppTheme { ScreenshotInboxScreen() } }
     }
 }
 
@@ -67,41 +78,88 @@ private fun ScreenshotInboxScreen() {
         if (hasPermission) screenshots = loadScreenshots(context)
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text("Screenshot Inbox", style = MaterialTheme.typography.headlineMedium)
-        Text("Разбирай скриншоты как входящие: по одному, без бесконечной галереи.")
+    NeonBackdrop {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
+            AppHeader(
+                icon = "🖼️",
+                title = "Screenshot Inbox",
+                subtitle = "Разбери галерею без хаоса"
+            )
+            Spacer(Modifier.height(20.dp))
 
-        if (!hasPermission) {
-            Button(onClick = { permissionLauncher.launch(permission) }) { Text("Разрешить доступ к скриншотам") }
-            Text("Приложение читает изображения только для поиска файлов со скриншотами.")
-        } else {
-            Text("Найдено: ${screenshots.size}", style = MaterialTheme.typography.titleLarge)
-            if (screenshots.isEmpty()) {
-                Text("Входящие пусты 🎉")
+            if (!hasPermission) {
+                GlassCard(Modifier.fillMaxWidth()) {
+                    StatusPill("Доступ к фото нужен один раз", NeonCyan)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Приложение находит только скриншоты и помогает разбирать их как входящие.",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    GradientButton(
+                        text = "Разрешить доступ",
+                        leading = "✨",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { permissionLauncher.launch(permission) }
+                    )
+                }
             } else {
-                Button(onClick = { refreshToken++ }) { Text("Обновить") }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(screenshots.take(50), key = { it.id }) { item ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.name, style = MaterialTheme.typography.titleMedium)
-                                    Text("Добавлен: ${item.dateAdded}")
-                                }
-                                Button(onClick = {
-                                    val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, item.id)
-                                    if (Build.VERSION.SDK_INT >= 30) {
-                                        val pendingIntent: PendingIntent = MediaStore.createDeleteRequest(context.contentResolver, listOf(uri))
-                                        deleteLauncher.launch(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
-                                    } else {
-                                        @Suppress("DEPRECATION")
-                                        context.contentResolver.delete(uri, null, null)
-                                        refreshToken++
+                GlassCard(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column {
+                            Text("Входящие", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                screenshots.size.toString(),
+                                color = TextPrimary,
+                                style = MaterialTheme.typography.displaySmall
+                            )
+                        }
+                        StatusPill(if (screenshots.isEmpty()) "Чисто" else "Нужно разобрать")
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    SecondaryButton(
+                        text = "Обновить",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { refreshToken++ }
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+
+                if (screenshots.isEmpty()) {
+                    GlassCard(Modifier.fillMaxWidth()) {
+                        Text("Входящие пусты 🎉", color = TextPrimary, style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Новых скриншотов для разбора нет.", color = TextSecondary)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(screenshots.take(50), key = { it.id }) { item ->
+                            GlassCard(Modifier.fillMaxWidth()) {
+                                Text(item.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.height(4.dp))
+                                Text("Добавлен: ${item.dateAdded}", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                                Spacer(Modifier.height(12.dp))
+                                SecondaryButton(
+                                    text = "Удалить",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, item.id)
+                                        if (Build.VERSION.SDK_INT >= 30) {
+                                            val pendingIntent: PendingIntent = MediaStore.createDeleteRequest(context.contentResolver, listOf(uri))
+                                            deleteLauncher.launch(IntentSenderRequest.Builder(pendingIntent.intentSender).build())
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            context.contentResolver.delete(uri, null, null)
+                                            refreshToken++
+                                        }
                                     }
-                                }) { Text("Удалить") }
+                                )
                             }
                         }
                     }
