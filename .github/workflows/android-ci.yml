@@ -25,6 +25,8 @@ jobs:
         run: gradle --stacktrace :apps:screenshot-inbox:testDebugUnitTest :apps:match-choice:testDebugUnitTest :apps:who-brings-what:testDebugUnitTest :apps:buy-tomorrow:testDebugUnitTest :apps:meeting-meter:testDebugUnitTest
       - name: Lint
         run: gradle --stacktrace :apps:screenshot-inbox:lintDebug :apps:match-choice:lintDebug :apps:who-brings-what:lintDebug :apps:buy-tomorrow:lintDebug :apps:meeting-meter:lintDebug
+      - name: Compile instrumented test APKs
+        run: gradle --stacktrace :apps:screenshot-inbox:assembleDebugAndroidTest :apps:match-choice:assembleDebugAndroidTest :apps:who-brings-what:assembleDebugAndroidTest :apps:buy-tomorrow:assembleDebugAndroidTest :apps:meeting-meter:assembleDebugAndroidTest
       - name: Build Wave 1 debug APKs
         run: gradle --stacktrace :apps:screenshot-inbox:assembleDebug :apps:match-choice:assembleDebug :apps:who-brings-what:assembleDebug :apps:buy-tomorrow:assembleDebug :apps:meeting-meter:assembleDebug
       - name: Upload APKs
