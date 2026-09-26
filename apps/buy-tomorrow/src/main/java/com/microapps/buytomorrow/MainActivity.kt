@@ -8,13 +8,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,12 +26,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.microapps.designsystem.AppHeader
+import com.microapps.designsystem.GlassCard
+import com.microapps.designsystem.GradientButton
+import com.microapps.designsystem.NeonBackdrop
+import com.microapps.designsystem.NeonChip
+import com.microapps.designsystem.NeonCyan
+import com.microapps.designsystem.NeonGreen
+import com.microapps.designsystem.NeonOrange
+import com.microapps.designsystem.NeonTextField
+import com.microapps.designsystem.SecondaryButton
+import com.microapps.designsystem.SectionTitle
+import com.microapps.designsystem.StatusPill
+import com.microapps.designsystem.TextPrimary
+import com.microapps.designsystem.TextSecondary
+import com.microapps.designsystem.UnifiedAppTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { BuyTomorrowScreen() } }
+        setContent { UnifiedAppTheme { BuyTomorrowScreen() } }
     }
 }
 
@@ -46,42 +62,130 @@ private fun BuyTomorrowScreen() {
     fun updateStatus(target: Wish, status: String) { save(updateWishStatus(wishes, target.createdAt, status)) }
     val saved = savedAmount(wishes)
 
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("BuyTomorrow", style = MaterialTheme.typography.headlineMedium)
-        Text("Не запрещай себе покупку. Просто отложи решение.")
-        Text("Не потрачено: ${formatAmount(saved)}", style = MaterialTheme.typography.titleLarge)
-        OutlinedTextField(name, { name = it }, label = { Text("Что хочется купить") }, modifier = Modifier.fillMaxWidth().testTag("wish-name"))
-        OutlinedTextField(amount, { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } }, label = { Text("Цена") }, modifier = Modifier.fillMaxWidth().testTag("wish-price"))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(24, 48, 72).forEach { hours -> Button(onClick = { waitHours = hours }, enabled = waitHours != hours) { Text("${hours}ч") } }
-        }
-        Button(modifier = Modifier.testTag("add-wish"), onClick = {
-            val value = amount.replace(',', '.').toDoubleOrNull() ?: return@Button
-            if (name.isNotBlank() && value >= 0) {
-                save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
-                name = ""; amount = ""
-            }
-        }) { Text("Отложить покупку") }
+    NeonBackdrop {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            AppHeader(
+                icon = "🛒",
+                title = "BuyTomorrow",
+                subtitle = "Пауза перед импульсивной покупкой"
+            )
 
-        wishes.sortedByDescending { it.createdAt }.forEach { wish ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(wish.name, style = MaterialTheme.typography.titleMedium)
-                    Text("${formatAmount(wish.amount)} · пауза ${wish.waitHours} ч · ${wish.status}")
-                    if (wish.status == "waiting") {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { updateStatus(wish, "skipped") }) { Text("Передумал") }
-                            Button(onClick = { updateStatus(wish, "bought") }) { Text("Купил") }
+            GlassCard(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column {
+                        Text("Сохранено решениями", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Не потрачено: ${formatAmount(saved)}",
+                            color = TextPrimary,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
+                    StatusPill(if (saved > 0) "Экономия" else "Старт", NeonGreen)
+                }
+            }
+
+            if (wishes.isNotEmpty()) {
+                SectionTitle("Мои решения")
+                wishes.sortedByDescending { it.createdAt }.forEach { wish ->
+                    GlassCard(Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(Modifier.weight(1f)) {
+                                Text(wish.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "${formatAmount(wish.amount)} · пауза ${wish.waitHours} ч",
+                                    color = TextSecondary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            when (wish.status) {
+                                "skipped" -> StatusPill("Передумал", NeonGreen)
+                                "bought" -> StatusPill("Куплено", NeonOrange)
+                                else -> StatusPill("Ждём", NeonCyan)
+                            }
+                        }
+                        if (wish.status == "waiting") {
+                            Spacer(Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SecondaryButton(
+                                    text = "Передумал",
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { updateStatus(wish, "skipped") }
+                                )
+                                SecondaryButton(
+                                    text = "Купил",
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { updateStatus(wish, "bought") }
+                                )
+                            }
                         }
                     }
                 }
             }
+
+            GlassCard(Modifier.fillMaxWidth()) {
+                SectionTitle("Новая покупка")
+                Spacer(Modifier.height(10.dp))
+                NeonTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Что хочется купить",
+                    modifier = Modifier.fillMaxWidth().testTag("wish-name")
+                )
+                Spacer(Modifier.height(10.dp))
+                NeonTextField(
+                    value = amount,
+                    onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
+                    label = "Цена",
+                    modifier = Modifier.fillMaxWidth().testTag("wish-price")
+                )
+                Spacer(Modifier.height(12.dp))
+                Text("Сколько подождать?", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(24, 48, 72).forEach { hours ->
+                        NeonChip(
+                            text = "${hours}ч",
+                            selected = waitHours == hours,
+                            onClick = { waitHours = hours }
+                        )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                GradientButton(
+                    text = "Отложить покупку",
+                    leading = "⏳",
+                    modifier = Modifier.fillMaxWidth().testTag("add-wish"),
+                    onClick = {
+                        val value = amount.replace(',', '.').toDoubleOrNull() ?: return@GradientButton
+                        if (name.isNotBlank() && value >= 0) {
+                            save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
+                            name = ""
+                            amount = ""
+                        }
+                    }
+                )
+            }
+
+            GradientButton(
+                text = "Поделиться экономией",
+                leading = "↗",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = saved > 0,
+                onClick = {
+                    val text = "BuyTomorrow: я не потратил ${formatAmount(saved)}, просто откладывая импульсивные покупки."
+                    val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+                    context.startActivity(Intent.createChooser(send, "Поделиться результатом"))
+                }
+            )
         }
-        Button(enabled = saved > 0, onClick = {
-            val text = "BuyTomorrow: я не потратил ${formatAmount(saved)}, просто откладывая импульсивные покупки."
-            val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
-            context.startActivity(Intent.createChooser(send, "Поделиться результатом"))
-        }) { Text("Поделиться экономией") }
     }
 }
 

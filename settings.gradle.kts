@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "microapps-android"
+include(":core:designsystem")
 include(":apps:screenshot-inbox")
 include(":apps:match-choice")
 include(":apps:who-brings-what")
