@@ -24,8 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import org.json.JSONArray
-import org.json.JSONObject
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,8 +32,6 @@ class MainActivity : ComponentActivity() {
         setContent { MaterialTheme { BuyTomorrowScreen() } }
     }
 }
-
-data class Wish(val name: String, val amount: Double, val createdAt: Long, val waitHours: Int, val status: String = "waiting")
 
 @Composable
 private fun BuyTomorrowScreen() {
@@ -45,29 +42,23 @@ private fun BuyTomorrowScreen() {
     var waitHours by remember { mutableStateOf(48) }
 
     fun save(next: List<Wish>) { wishes = next; saveWishes(context, next) }
-    fun updateStatus(target: Wish, status: String) {
-        save(wishes.map { current -> if (current.createdAt == target.createdAt) current.copy(status = status) else current })
-    }
-
-    val saved = wishes.filter { it.status == "skipped" }.sumOf { it.amount }
+    fun updateStatus(target: Wish, status: String) { save(updateWishStatus(wishes, target.createdAt, status)) }
+    val saved = savedAmount(wishes)
 
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("BuyTomorrow", style = MaterialTheme.typography.headlineMedium)
         Text("Не запрещай себе покупку. Просто отложи решение.")
-        Text("Не потрачено: ${"%.2f".format(saved)}", style = MaterialTheme.typography.titleLarge)
+        Text("Не потрачено: ${formatAmount(saved)}", style = MaterialTheme.typography.titleLarge)
         OutlinedTextField(name, { name = it }, label = { Text("Что хочется купить") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(amount, { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } }, label = { Text("Цена") }, modifier = Modifier.fillMaxWidth())
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(24, 48, 72).forEach { hours ->
-                Button(onClick = { waitHours = hours }, enabled = waitHours != hours) { Text("${hours}ч") }
-            }
+            listOf(24, 48, 72).forEach { hours -> Button(onClick = { waitHours = hours }, enabled = waitHours != hours) { Text("${hours}ч") } }
         }
         Button(onClick = {
             val value = amount.replace(',', '.').toDoubleOrNull() ?: return@Button
-            if (name.isNotBlank()) {
+            if (name.isNotBlank() && value >= 0) {
                 save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
-                name = ""
-                amount = ""
+                name = ""; amount = ""
             }
         }) { Text("Отложить покупку") }
 
@@ -75,7 +66,7 @@ private fun BuyTomorrowScreen() {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(wish.name, style = MaterialTheme.typography.titleMedium)
-                    Text("${wish.amount} · пауза ${wish.waitHours} ч · ${wish.status}")
+                    Text("${formatAmount(wish.amount)} · пауза ${wish.waitHours} ч · ${wish.status}")
                     if (wish.status == "waiting") {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(onClick = { updateStatus(wish, "skipped") }) { Text("Передумал") }
@@ -86,32 +77,13 @@ private fun BuyTomorrowScreen() {
             }
         }
         Button(enabled = saved > 0, onClick = {
-            val text = "BuyTomorrow: я не потратил ${"%.2f".format(saved)}, просто откладывая импульсивные покупки."
+            val text = "BuyTomorrow: я не потратил ${formatAmount(saved)}, просто откладывая импульсивные покупки."
             val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
             context.startActivity(Intent.createChooser(send, "Поделиться результатом"))
         }) { Text("Поделиться экономией") }
     }
 }
 
-private fun loadWishes(context: Context): List<Wish> = runCatching {
-    val raw = context.getSharedPreferences("data", Context.MODE_PRIVATE).getString("wishes", "[]") ?: "[]"
-    val array = JSONArray(raw)
-    (0 until array.length()).map { i ->
-        val o = array.getJSONObject(i)
-        Wish(o.getString("name"), o.getDouble("amount"), o.getLong("createdAt"), o.getInt("waitHours"), o.optString("status", "waiting"))
-    }
-}.getOrDefault(emptyList())
-
-private fun saveWishes(context: Context, wishes: List<Wish>) {
-    val array = JSONArray()
-    wishes.forEach { w ->
-        array.put(JSONObject().apply {
-            put("name", w.name)
-            put("amount", w.amount)
-            put("createdAt", w.createdAt)
-            put("waitHours", w.waitHours)
-            put("status", w.status)
-        })
-    }
-    context.getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("wishes", array.toString()).apply()
-}
+private fun formatAmount(value: Double): String = String.format(Locale.US, "%.2f", value)
+private fun loadWishes(context: Context): List<Wish> = WishCodec.decode(context.getSharedPreferences("data", Context.MODE_PRIVATE).getString("wishes", "").orEmpty())
+private fun saveWishes(context: Context, wishes: List<Wish>) { context.getSharedPreferences("data", Context.MODE_PRIVATE).edit().putString("wishes", WishCodec.encode(wishes)).apply() }

@@ -2,7 +2,6 @@ package com.microapps.matchchoice
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -24,8 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import org.json.JSONArray
-import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +61,7 @@ private fun MatchChoiceScreen() {
                 }
             }
             Button(enabled = options.size >= 2 && creatorSelected.isNotEmpty(), onClick = {
-                inviteCode = encodeInvite(Invite(title, options, creatorSelected.toList()))
+                inviteCode = InviteCodec.encode(Invite(title.trim(), options, creatorSelected.toList()))
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, "MatchChoice: $title\nКод приглашения:\n$inviteCode")
@@ -73,7 +70,7 @@ private fun MatchChoiceScreen() {
             }) { Text("Отправить другу") }
 
             OutlinedTextField(inviteCode, { inviteCode = it.trim() }, label = { Text("Или вставь код приглашения") }, modifier = Modifier.fillMaxWidth())
-            Button(enabled = inviteCode.isNotBlank(), onClick = { imported = decodeInvite(inviteCode) }) { Text("Открыть приглашение") }
+            Button(enabled = InviteCodec.decode(inviteCode) != null, onClick = { imported = InviteCodec.decode(inviteCode) }) { Text("Открыть приглашение") }
         } else {
             val invite = imported!!
             Text(invite.title, style = MaterialTheme.typography.titleLarge)
@@ -86,27 +83,10 @@ private fun MatchChoiceScreen() {
                     Text(option, modifier = Modifier.padding(top = 12.dp))
                 }
             }
-            Button(onClick = { result = invite.creator.filter { it in guestSelected } }) { Text("Показать совпадения") }
+            Button(onClick = { result = matchingChoices(invite.creator, guestSelected) }) { Text("Показать совпадения") }
             if (result.isNotEmpty()) Text("Совпало: ${result.joinToString()}", style = MaterialTheme.typography.titleMedium)
             else if (guestSelected.isNotEmpty()) Text("Пока совпадений нет")
             Button(onClick = { imported = null; guestSelected = emptySet(); result = emptyList() }) { Text("Создать свой выбор") }
         }
     }
 }
-
-data class Invite(val title: String, val options: List<String>, val creator: List<String>)
-
-private fun encodeInvite(invite: Invite): String {
-    val json = JSONObject().apply {
-        put("title", invite.title)
-        put("options", JSONArray(invite.options))
-        put("creator", JSONArray(invite.creator))
-    }
-    return Base64.encodeToString(json.toString().toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
-}
-
-private fun decodeInvite(code: String): Invite? = runCatching {
-    val json = JSONObject(String(Base64.decode(code.trim(), Base64.URL_SAFE or Base64.NO_WRAP)))
-    fun JSONArray.toStrings() = (0 until length()).map { getString(it) }
-    Invite(json.getString("title"), json.getJSONArray("options").toStrings(), json.getJSONArray("creator").toStrings())
-}.getOrNull()

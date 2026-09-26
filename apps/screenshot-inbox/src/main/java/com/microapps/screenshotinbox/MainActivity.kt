@@ -76,7 +76,7 @@ private fun ScreenshotInboxScreen() {
 
         if (!hasPermission) {
             Button(onClick = { permissionLauncher.launch(permission) }) { Text("Разрешить доступ к скриншотам") }
-            Text("Приложение читает изображения только для поиска папок и файлов со скриншотами.")
+            Text("Приложение читает изображения только для поиска файлов со скриншотами.")
         } else {
             Text("Найдено: ${screenshots.size}", style = MaterialTheme.typography.titleLarge)
             if (screenshots.isEmpty()) {
@@ -89,7 +89,7 @@ private fun ScreenshotInboxScreen() {
                             Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(item.name, style = MaterialTheme.typography.titleMedium)
-                                    Text("${item.dateAdded}")
+                                    Text("Добавлен: ${item.dateAdded}")
                                 }
                                 Button(onClick = {
                                     val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, item.id)
@@ -136,7 +136,7 @@ private suspend fun loadScreenshots(context: Context): List<ScreenshotItem> = wi
         while (cursor.moveToNext()) {
             val name = cursor.getString(nameIndex) ?: "Screenshot"
             val folder = if (folderIndex >= 0) cursor.getString(folderIndex).orEmpty() else ""
-            if (name.contains("screenshot", ignoreCase = true) || folder.contains("screenshot", ignoreCase = true)) {
+            if (isScreenshot(name, folder)) {
                 result += ScreenshotItem(cursor.getLong(idIndex), name, cursor.getLong(dateIndex))
             }
         }
