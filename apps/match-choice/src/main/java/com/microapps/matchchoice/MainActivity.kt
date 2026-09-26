@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
@@ -49,18 +50,18 @@ private fun MatchChoiceScreen() {
         Text("Два человека выбирают независимо. Показываем только совпадения.")
 
         if (imported == null) {
-            OutlinedTextField(title, { title = it }, label = { Text("Вопрос") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(rawOptions, { rawOptions = it }, label = { Text("Варианты, по одному в строке") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(title, { title = it }, label = { Text("Вопрос") }, modifier = Modifier.fillMaxWidth().testTag("title"))
+            OutlinedTextField(rawOptions, { rawOptions = it }, label = { Text("Варианты, по одному в строке") }, modifier = Modifier.fillMaxWidth().testTag("options"))
             Text("Мой выбор")
             options.forEach { option ->
                 Row {
-                    Checkbox(checked = option in creatorSelected, onCheckedChange = { checked ->
+                    Checkbox(modifier = Modifier.testTag("creator-$option"), checked = option in creatorSelected, onCheckedChange = { checked ->
                         creatorSelected = if (checked) creatorSelected + option else creatorSelected - option
                     })
                     Text(option, modifier = Modifier.padding(top = 12.dp))
                 }
             }
-            Button(enabled = options.size >= 2 && creatorSelected.isNotEmpty(), onClick = {
+            Button(modifier = Modifier.testTag("share-invite"), enabled = options.size >= 2 && creatorSelected.isNotEmpty(), onClick = {
                 inviteCode = InviteCodec.encode(Invite(title.trim(), options, creatorSelected.toList()))
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
@@ -69,21 +70,21 @@ private fun MatchChoiceScreen() {
                 context.startActivity(Intent.createChooser(send, "Отправить выбор"))
             }) { Text("Отправить другу") }
 
-            OutlinedTextField(inviteCode, { inviteCode = it.trim() }, label = { Text("Или вставь код приглашения") }, modifier = Modifier.fillMaxWidth())
-            Button(enabled = InviteCodec.decode(inviteCode) != null, onClick = { imported = InviteCodec.decode(inviteCode) }) { Text("Открыть приглашение") }
+            OutlinedTextField(inviteCode, { inviteCode = it.trim() }, label = { Text("Или вставь код приглашения") }, modifier = Modifier.fillMaxWidth().testTag("invite-code"))
+            Button(modifier = Modifier.testTag("open-invite"), enabled = InviteCodec.decode(inviteCode) != null, onClick = { imported = InviteCodec.decode(inviteCode) }) { Text("Открыть приглашение") }
         } else {
             val invite = imported!!
             Text(invite.title, style = MaterialTheme.typography.titleLarge)
             Text("Отметь всё, что подходит тебе")
             invite.options.forEach { option ->
                 Row {
-                    Checkbox(checked = option in guestSelected, onCheckedChange = { checked ->
+                    Checkbox(modifier = Modifier.testTag("guest-$option"), checked = option in guestSelected, onCheckedChange = { checked ->
                         guestSelected = if (checked) guestSelected + option else guestSelected - option
                     })
                     Text(option, modifier = Modifier.padding(top = 12.dp))
                 }
             }
-            Button(onClick = { result = matchingChoices(invite.creator, guestSelected) }) { Text("Показать совпадения") }
+            Button(modifier = Modifier.testTag("show-matches"), onClick = { result = matchingChoices(invite.creator, guestSelected) }) { Text("Показать совпадения") }
             if (result.isNotEmpty()) Text("Совпало: ${result.joinToString()}", style = MaterialTheme.typography.titleMedium)
             else if (guestSelected.isNotEmpty()) Text("Пока совпадений нет")
             Button(onClick = { imported = null; guestSelected = emptySet(); result = emptyList() }) { Text("Создать свой выбор") }

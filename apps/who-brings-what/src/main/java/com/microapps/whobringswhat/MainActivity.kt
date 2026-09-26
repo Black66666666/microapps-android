@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
@@ -49,10 +50,10 @@ private fun WhoBringsWhatScreen() {
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("WhoBringsWhat", style = MaterialTheme.typography.headlineMedium)
         Text("Создай общий список и распредели, кто что приносит.")
-        OutlinedTextField(eventName, { value -> eventName = value; persist(name = value) }, label = { Text("Событие") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(eventName, { value -> eventName = value; persist(name = value) }, label = { Text("Событие") }, modifier = Modifier.fillMaxWidth().testTag("event-name"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(itemText, { itemText = it }, label = { Text("Что нужно") }, modifier = Modifier.weight(1f))
-            Button(onClick = {
+            OutlinedTextField(itemText, { itemText = it }, label = { Text("Что нужно") }, modifier = Modifier.weight(1f).testTag("item-input"))
+            Button(modifier = Modifier.testTag("add-item"), onClick = {
                 val value = itemText.trim()
                 if (value.isNotEmpty()) { items += BringItem(value); itemText = ""; persist() }
             }) { Text("+") }
@@ -66,7 +67,7 @@ private fun WhoBringsWhatScreen() {
                         value = item.owner,
                         onValueChange = { owner -> items[index] = item.copy(owner = owner); persist() },
                         label = { Text("Кто берёт") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("owner-$index")
                     )
                 }
             }

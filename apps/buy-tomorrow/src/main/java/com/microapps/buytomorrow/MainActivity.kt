@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
@@ -49,12 +50,12 @@ private fun BuyTomorrowScreen() {
         Text("BuyTomorrow", style = MaterialTheme.typography.headlineMedium)
         Text("Не запрещай себе покупку. Просто отложи решение.")
         Text("Не потрачено: ${formatAmount(saved)}", style = MaterialTheme.typography.titleLarge)
-        OutlinedTextField(name, { name = it }, label = { Text("Что хочется купить") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(amount, { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } }, label = { Text("Цена") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(name, { name = it }, label = { Text("Что хочется купить") }, modifier = Modifier.fillMaxWidth().testTag("wish-name"))
+        OutlinedTextField(amount, { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } }, label = { Text("Цена") }, modifier = Modifier.fillMaxWidth().testTag("wish-price"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(24, 48, 72).forEach { hours -> Button(onClick = { waitHours = hours }, enabled = waitHours != hours) { Text("${hours}ч") } }
         }
-        Button(onClick = {
+        Button(modifier = Modifier.testTag("add-wish"), onClick = {
             val value = amount.replace(',', '.').toDoubleOrNull() ?: return@Button
             if (name.isNotBlank() && value >= 0) {
                 save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
