@@ -18,6 +18,10 @@ Monorepo for a portfolio of small Android applications used to validate product 
 4. BuyTomorrow
 5. MeetingMeter
 
+## Product experiments
+
+- Scroll Receipt — Android Gate 0A for automatic TikTok / Instagram Reels / YouTube Shorts counting. Source: `apps/scroll-receipt/`; product and test documentation: `docs/scroll-receipt/`.
+
 ## Planned portfolio
 
-See `docs/PORTFOLIO.md` once Wave 1 scaffolding is merged.
+See `docs/PORTFOLIO.md`.
