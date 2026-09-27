@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,7 +79,11 @@ fun PromiseScreen() {
                 Text("${item.optString("person")}: ${item.optString("promise")}")
                 if (item.optString("due").isNotBlank()) Text("До ${item.optString("due")}")
                 Text(if (item.optBoolean("done")) "Выполнено" else "Открыто")
-                if (!item.optBoolean("done")) Button(onClick = { val next = JSONArray(items.toString()); next.getJSONObject(i).put("done", true); save(next) }) { Text("Выполнено") }
+                if (!item.optBoolean("done")) {
+                    SecondaryAction("Выполнено") {
+                        val next = JSONArray(items.toString()); next.getJSONObject(i).put("done", true); save(next)
+                    }
+                }
             }
         }
     }
@@ -106,7 +109,13 @@ fun GiftPocketScreen() {
             ItemCard {
                 Text("${item.optString("person")}: ${item.optString("idea")}")
                 if (item.optString("note").isNotBlank()) Text(item.optString("note"))
-                if (!item.optBoolean("bought")) Button(onClick = { val next = JSONArray(items.toString()); next.getJSONObject(i).put("bought", true); save(next) }) { Text("Куплено") } else Text("✓ Куплено")
+                if (!item.optBoolean("bought")) {
+                    SecondaryAction("Куплено") {
+                        val next = JSONArray(items.toString()); next.getJSONObject(i).put("bought", true); save(next)
+                    }
+                } else {
+                    Text("✓ Куплено")
+                }
             }
         }
     }
@@ -130,7 +139,7 @@ fun BeforeLeaveScreen() {
                 Text(item.optString("text"))
             }
         }
-        PrimaryAction("Новый выход — сбросить отметки", items.length() > 0) {
+        SecondaryAction("Новый выход — сбросить отметки", items.length() > 0) {
             val next = JSONArray(items.toString()); for (i in 0 until next.length()) next.getJSONObject(i).put("checked", false); save(next)
         }
     }
@@ -163,6 +172,8 @@ fun FairPickScreen() {
         }
         selected?.let { ItemCard { Text("Выбрано: $it") } }
         list().forEach { ItemCard { Text(it.name); Text("Выбирался: ${it.picks} раз") } }
-        Button(onClick = { val next = JSONArray(people.toString()); for (i in 0 until next.length()) next.getJSONObject(i).put("picks", 0); save(next); selected = null }) { Text("Сбросить историю") }
+        SecondaryAction("Сбросить историю") {
+            val next = JSONArray(people.toString()); for (i in 0 until next.length()) next.getJSONObject(i).put("picks", 0); save(next); selected = null
+        }
     }
 }
