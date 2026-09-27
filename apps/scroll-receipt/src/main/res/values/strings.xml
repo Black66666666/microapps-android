@@ -10,7 +10,8 @@
     <string name="counting_on_short">ON</string>
     <string name="counting_off_short">OFF</string>
     <string name="service_enabled_detail">Counting is automatic. You can close Scroll Receipt; the Android accessibility service keeps listening for supported short-video activity.</string>
-    <string name="service_disabled_detail">Enable the accessibility service once. After that, normal counting does not require a Start button.</string>
+    <string name="service_disabled_detail">The accessibility service is not active right now. Enable Scroll Receipt in Accessibility settings before testing.</string>
+    <string name="service_not_active">Scroll Receipt accessibility service is not active. Enable it first; calibration will not start while it is off.</string>
     <string name="enable_counting">Enable automatic counting</string>
     <string name="open_accessibility">Accessibility settings</string>
     <string name="today">TODAY</string>
@@ -48,7 +49,7 @@
     <string name="export_report">Export calibration report</string>
     <string name="reset_counters">Reset today’s prototype counters</string>
     <string name="confirm_reset_title">Reset counters?</string>
-    <string name="confirm_reset_body">This removes the local Gate 0A counters and diagnostic logs from this device.</string>
+    <string name="confirm_reset_body">This removes today’s counters and diagnostic logs. It does not disable Accessibility.</string>
     <string name="cancel">Cancel</string>
     <string name="reset">Reset</string>
     <string name="export_failed">Could not export the report.</string>
