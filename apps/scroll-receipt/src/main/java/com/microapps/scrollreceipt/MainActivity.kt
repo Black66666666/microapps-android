@@ -1,11 +1,9 @@
 package com.microapps.scrollreceipt
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -50,14 +48,14 @@ data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val 
 @Composable private fun Screen() {
     val context = LocalContext.current
     val store = remember { ProbeStore(context) }
-    var ui by remember { mutableStateOf(snapshot(context, store)) }
+    var ui by remember { mutableStateOf(snapshot(store)) }
     var diagnostics by remember { mutableStateOf(false) }
     var actual by remember { mutableStateOf("") }
     var confirmReset by remember { mutableStateOf(false) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) runCatching { context.contentResolver.openOutputStream(uri)?.use { out -> OutputStreamWriter(out).use { it.write(store.report().toString(2)) } } }.onFailure { Toast.makeText(context, R.string.export_failed, Toast.LENGTH_LONG).show() }
     }
-    LaunchedEffect(Unit) { while (true) { ui = snapshot(context, store); delay(1000) } }
+    LaunchedEffect(Unit) { while (true) { ui = snapshot(store); delay(1000) } }
     NeonBackdrop {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             AppHeader(stringResource(R.string.logo_symbol), stringResource(R.string.brand_name), stringResource(R.string.brand_subtitle))
@@ -94,7 +92,7 @@ data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val 
                 Spacer(Modifier.height(6.dp)); SecondaryButton(stringResource(R.string.start_youtube), { startTest(context, store, TargetPlatform.YOUTUBE) }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp)); NeonTextField(actual, { actual = it.filter(Char::isDigit).take(5) }, stringResource(R.string.actual_count_short), Modifier.fillMaxWidth(), ui.test != null)
                 Text(stringResource(R.string.actual_count_hint), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-                Spacer(Modifier.height(8.dp)); GradientButton(stringResource(R.string.stop_test), { val n = actual.toIntOrNull(); if (n == null || n <= 0) Toast.makeText(context, R.string.manual_count_invalid, Toast.LENGTH_LONG).show() else { store.stopTest(n); actual = ""; ui = snapshot(context, store) } }, Modifier.fillMaxWidth(), ui.test != null)
+                Spacer(Modifier.height(8.dp)); GradientButton(stringResource(R.string.stop_test), { val n = actual.toIntOrNull(); if (n == null || n <= 0) Toast.makeText(context, R.string.manual_count_invalid, Toast.LENGTH_LONG).show() else { store.stopTest(n); actual = ""; ui = snapshot(store) } }, Modifier.fillMaxWidth(), ui.test != null)
                 store.lastTestResult()?.let { r -> Spacer(Modifier.height(8.dp)); StatusPill(if (r.optBoolean("pass_under_5_percent")) stringResource(R.string.test_pass, r.optDouble("error_percent")) else stringResource(R.string.test_fail, r.optDouble("error_percent")), if (r.optBoolean("pass_under_5_percent")) NeonGreen else NeonOrange) }
                 Spacer(Modifier.height(8.dp)); Text(stringResource(R.string.last_event, store.lastEvent()), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
                 Spacer(Modifier.height(8.dp)); SecondaryButton(stringResource(R.string.export_report), { export.launch("scroll-receipt-gate0a-report.json") }, Modifier.fillMaxWidth())
@@ -103,12 +101,21 @@ data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val 
             GlassCard(Modifier.fillMaxWidth()) { SectionTitle(stringResource(R.string.privacy_title)); Text(stringResource(R.string.privacy_note), color = TextSecondary, style = MaterialTheme.typography.bodySmall) }
         }
     }
-    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text(stringResource(R.string.confirm_reset_title)) }, text = { Text(stringResource(R.string.confirm_reset_body)) }, confirmButton = { TextButton(onClick = { store.resetAll(); ui = snapshot(context, store); confirmReset = false }) { Text(stringResource(R.string.reset)) } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.cancel)) } })
+    if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text(stringResource(R.string.confirm_reset_title)) }, text = { Text(stringResource(R.string.confirm_reset_body)) }, confirmButton = { TextButton(onClick = { store.resetAll(); ui = snapshot(store); confirmReset = false }) { Text(stringResource(R.string.reset)) } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
-private fun snapshot(context: Context, store: ProbeStore) = UiState(accessEnabled(context), store.stats(TargetPlatform.TIKTOK), store.stats(TargetPlatform.INSTAGRAM), store.stats(TargetPlatform.YOUTUBE), store.activeTest())
-private fun accessEnabled(context: Context): Boolean { val m = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager; return m.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).any { it.resolveInfo.serviceInfo.packageName == context.packageName && it.resolveInfo.serviceInfo.name.endsWith(".ScrollAccessibilityService") } }
-private fun startTest(context: Context, store: ProbeStore, platform: TargetPlatform) { val intent = context.packageManager.getLaunchIntentForPackage(platform.packageName); if (intent == null) { Toast.makeText(context, R.string.launch_failed, Toast.LENGTH_LONG).show(); return }; store.startTest(platform); runCatching { context.startActivity(intent) }.onFailure { store.cancelTest(); Toast.makeText(context, R.string.launch_failed, Toast.LENGTH_LONG).show() } }
+private fun snapshot(store: ProbeStore) = UiState(store.accessibilityEnabled() && store.serviceAlive(), store.stats(TargetPlatform.TIKTOK), store.stats(TargetPlatform.INSTAGRAM), store.stats(TargetPlatform.YOUTUBE), store.activeTest())
+private fun startTest(context: Context, store: ProbeStore, platform: TargetPlatform) {
+    if (!store.accessibilityEnabled() || !store.serviceAlive()) {
+        Toast.makeText(context, R.string.service_not_active, Toast.LENGTH_LONG).show()
+        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        return
+    }
+    val intent = context.packageManager.getLaunchIntentForPackage(platform.packageName)
+    if (intent == null) { Toast.makeText(context, R.string.launch_failed, Toast.LENGTH_LONG).show(); return }
+    store.startTest(platform)
+    runCatching { context.startActivity(intent) }.onFailure { store.cancelTest(); Toast.makeText(context, R.string.launch_failed, Toast.LENGTH_LONG).show() }
+}
 @Composable private fun liveLabel(ui: UiState): String { if (!ui.enabled) return stringResource(R.string.live_disabled); val p = when { ui.tik.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.TIKTOK; ui.reels.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.INSTAGRAM; ui.shorts.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.YOUTUBE; else -> null }; return p?.let { stringResource(R.string.live_counting, platformName(it)) } ?: stringResource(R.string.live_waiting) }
 @Composable private fun platformName(p: TargetPlatform) = when (p) { TargetPlatform.TIKTOK -> stringResource(R.string.tiktok); TargetPlatform.INSTAGRAM -> stringResource(R.string.reels_full); TargetPlatform.YOUTUBE -> stringResource(R.string.shorts_full) }
 @Composable private fun duration(s: Long): String { val h=s/3600; val m=(s%3600)/60; val sec=s%60; return when { h>0 -> stringResource(R.string.duration_hours_minutes,h,m); m>0 -> stringResource(R.string.duration_minutes_seconds,m,sec); else -> stringResource(R.string.duration_seconds,sec) } }
