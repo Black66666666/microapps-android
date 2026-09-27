@@ -30,7 +30,6 @@ import com.microapps.designsystem.BuyTomorrowAccent
 import com.microapps.designsystem.TaviCard
 import com.microapps.designsystem.TaviChip
 import com.microapps.designsystem.TaviGraphite
-import com.microapps.designsystem.TaviLime
 import com.microapps.designsystem.TaviPrimaryButton
 import com.microapps.designsystem.TaviScreen
 import com.microapps.designsystem.TaviSecondaryButton
