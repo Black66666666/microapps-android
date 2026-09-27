@@ -1,0 +1,1 @@
+Next implementation step: complete the remaining 15 functional apps without applying the frozen visual design; every module must include a launcher icon and pass CI/emulator checks.
