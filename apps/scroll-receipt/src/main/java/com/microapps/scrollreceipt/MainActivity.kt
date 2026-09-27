@@ -40,7 +40,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContent { UnifiedAppTheme { Screen() } } }
 }
 
-data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val reels: ProbeStore.PlatformStats, val shorts: ProbeStore.PlatformStats, val test: TargetPlatform?) {
+data class UiState(
+    val permissionEnabled: Boolean,
+    val serviceAlive: Boolean,
+    val tik: ProbeStore.PlatformStats,
+    val reels: ProbeStore.PlatformStats,
+    val shorts: ProbeStore.PlatformStats,
+    val test: TargetPlatform?
+) {
+    val enabled get() = permissionEnabled && serviceAlive
     val count get() = tik.count + reels.count + shorts.count
     val seconds get() = tik.activeSeconds + reels.activeSeconds + shorts.activeSeconds
 }
@@ -61,12 +69,23 @@ data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val 
             AppHeader(stringResource(R.string.logo_symbol), stringResource(R.string.brand_name), stringResource(R.string.brand_subtitle))
             GlassCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.weight(1f)) { SectionTitle(stringResource(R.string.automatic_measurement)); Text(stringResource(if (ui.enabled) R.string.service_enabled_detail else R.string.service_disabled_detail), color = TextSecondary, style = MaterialTheme.typography.bodySmall) }
+                    Column(Modifier.weight(1f)) {
+                        SectionTitle(stringResource(R.string.automatic_measurement))
+                        val detail = when {
+                            ui.enabled -> R.string.service_enabled_detail
+                            ui.permissionEnabled -> R.string.service_stopped_detail
+                            else -> R.string.service_disabled_detail
+                        }
+                        Text(stringResource(detail), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                    }
                     StatusPill(stringResource(if (ui.enabled) R.string.counting_on_short else R.string.counting_off_short), if (ui.enabled) NeonGreen else NeonOrange)
                 }
                 Spacer(Modifier.height(12.dp))
-                if (ui.enabled) SecondaryButton(stringResource(R.string.open_accessibility), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
-                else GradientButton(stringResource(R.string.enable_counting), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
+                when {
+                    ui.enabled -> SecondaryButton(stringResource(R.string.open_accessibility), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
+                    ui.permissionEnabled -> GradientButton(stringResource(R.string.restart_counting), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
+                    else -> GradientButton(stringResource(R.string.enable_counting), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
+                }
             }
             GlassCard(Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.today), color = NeonCyan, fontWeight = FontWeight.Bold)
@@ -104,7 +123,15 @@ data class UiState(val enabled: Boolean, val tik: ProbeStore.PlatformStats, val 
     if (confirmReset) AlertDialog(onDismissRequest = { confirmReset = false }, title = { Text(stringResource(R.string.confirm_reset_title)) }, text = { Text(stringResource(R.string.confirm_reset_body)) }, confirmButton = { TextButton(onClick = { store.resetAll(); ui = snapshot(store); confirmReset = false }) { Text(stringResource(R.string.reset)) } }, dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
-private fun snapshot(store: ProbeStore) = UiState(store.accessibilityEnabled() && store.serviceAlive(), store.stats(TargetPlatform.TIKTOK), store.stats(TargetPlatform.INSTAGRAM), store.stats(TargetPlatform.YOUTUBE), store.activeTest())
+private fun snapshot(store: ProbeStore) = UiState(
+    permissionEnabled = store.accessibilityEnabled(),
+    serviceAlive = store.serviceAlive(),
+    tik = store.stats(TargetPlatform.TIKTOK),
+    reels = store.stats(TargetPlatform.INSTAGRAM),
+    shorts = store.stats(TargetPlatform.YOUTUBE),
+    test = store.activeTest()
+)
+
 private fun startTest(context: Context, store: ProbeStore, platform: TargetPlatform) {
     if (!store.accessibilityEnabled() || !store.serviceAlive()) {
         Toast.makeText(context, R.string.service_not_active, Toast.LENGTH_LONG).show()
@@ -116,6 +143,31 @@ private fun startTest(context: Context, store: ProbeStore, platform: TargetPlatf
     store.startTest(platform)
     runCatching { context.startActivity(intent) }.onFailure { store.cancelTest(); Toast.makeText(context, R.string.launch_failed, Toast.LENGTH_LONG).show() }
 }
-@Composable private fun liveLabel(ui: UiState): String { if (!ui.enabled) return stringResource(R.string.live_disabled); val p = when { ui.tik.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.TIKTOK; ui.reels.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.INSTAGRAM; ui.shorts.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.YOUTUBE; else -> null }; return p?.let { stringResource(R.string.live_counting, platformName(it)) } ?: stringResource(R.string.live_waiting) }
-@Composable private fun platformName(p: TargetPlatform) = when (p) { TargetPlatform.TIKTOK -> stringResource(R.string.tiktok); TargetPlatform.INSTAGRAM -> stringResource(R.string.reels_full); TargetPlatform.YOUTUBE -> stringResource(R.string.shorts_full) }
-@Composable private fun duration(s: Long): String { val h=s/3600; val m=(s%3600)/60; val sec=s%60; return when { h>0 -> stringResource(R.string.duration_hours_minutes,h,m); m>0 -> stringResource(R.string.duration_minutes_seconds,m,sec); else -> stringResource(R.string.duration_seconds,sec) } }
+
+@Composable private fun liveLabel(ui: UiState): String {
+    if (!ui.enabled) return stringResource(R.string.live_disabled)
+    val p = when {
+        ui.tik.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.TIKTOK
+        ui.reels.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.INSTAGRAM
+        ui.shorts.state == DetectorState.SHORT_MODE_ACTIVE.name -> TargetPlatform.YOUTUBE
+        else -> null
+    }
+    return p?.let { stringResource(R.string.live_counting, platformName(it)) } ?: stringResource(R.string.live_waiting)
+}
+
+@Composable private fun platformName(p: TargetPlatform) = when (p) {
+    TargetPlatform.TIKTOK -> stringResource(R.string.tiktok)
+    TargetPlatform.INSTAGRAM -> stringResource(R.string.reels_full)
+    TargetPlatform.YOUTUBE -> stringResource(R.string.shorts_full)
+}
+
+@Composable private fun duration(s: Long): String {
+    val h = s / 3600
+    val m = (s % 3600) / 60
+    val sec = s % 60
+    return when {
+        h > 0 -> stringResource(R.string.duration_hours_minutes, h, m)
+        m > 0 -> stringResource(R.string.duration_minutes_seconds, m, sec)
+        else -> stringResource(R.string.duration_seconds, sec)
+    }
+}
