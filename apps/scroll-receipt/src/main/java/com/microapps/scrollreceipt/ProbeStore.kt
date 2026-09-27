@@ -1,7 +1,9 @@
 package com.microapps.scrollreceipt
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.os.Build
+import android.view.accessibility.AccessibilityManager
 import com.microapps.scrollreceipt.core.DetectorDecision
 import com.microapps.scrollreceipt.core.DetectorState
 import com.microapps.scrollreceipt.core.ProbeEventKind
@@ -15,6 +17,7 @@ import java.util.UUID
 class ProbeStore(context: Context) {
     private val app = context.applicationContext
     private val prefs = app.getSharedPreferences("scroll_receipt_gate0a", Context.MODE_PRIVATE)
+    private val servicePrefs = app.getSharedPreferences("scroll_receipt_service_state", Context.MODE_PRIVATE)
     private val traceFile get() = app.filesDir.resolve("scroll_receipt_calibration_trace.jsonl")
 
     data class PlatformStats(val count: Int, val activeSeconds: Long, val state: String, val confidence: Double, val reason: String)
@@ -72,9 +75,43 @@ class ProbeStore(context: Context) {
         val key = "${platform.name.lowercase()}_active_ms"
         prefs.edit().putLong(key, prefs.getLong(key, 0L) + millis).apply()
     }
+
     fun setLastEvent(value: String) = prefs.edit().putString("last_event", value.take(300)).apply()
     fun lastEvent(): String = prefs.getString("last_event", "none") ?: "none"
     fun generation(): Int = prefs.getInt("generation", 0)
+
+    fun markServiceConnected() {
+        servicePrefs.edit()
+            .putBoolean("connected", true)
+            .putLong("heartbeat_wall_ms", System.currentTimeMillis())
+            .putLong("connected_wall_ms", System.currentTimeMillis())
+            .commit()
+    }
+
+    fun markServiceHeartbeat() {
+        servicePrefs.edit()
+            .putBoolean("connected", true)
+            .putLong("heartbeat_wall_ms", System.currentTimeMillis())
+            .apply()
+    }
+
+    fun markServiceDisconnected() {
+        servicePrefs.edit().putBoolean("connected", false).putLong("heartbeat_wall_ms", System.currentTimeMillis()).commit()
+    }
+
+    fun serviceAlive(): Boolean {
+        if (!servicePrefs.getBoolean("connected", false)) return false
+        val heartbeat = servicePrefs.getLong("heartbeat_wall_ms", 0L)
+        return heartbeat > 0L && System.currentTimeMillis() - heartbeat <= 8_000L
+    }
+
+    fun accessibilityEnabled(): Boolean {
+        val manager = app.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        return manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).any {
+            it.resolveInfo.serviceInfo.packageName == app.packageName && it.resolveInfo.serviceInfo.name.endsWith(".ScrollAccessibilityService")
+        }
+    }
+
     fun stats(platform: TargetPlatform): PlatformStats {
         ensureDay(); val p = platform.name.lowercase()
         return PlatformStats(prefs.getInt("${p}_count", 0), prefs.getLong("${p}_active_ms", 0L) / 1000L, prefs.getString("${p}_state", DetectorState.OUTSIDE_TARGET_APP.name) ?: DetectorState.OUTSIDE_TARGET_APP.name, prefs.getFloat("${p}_confidence", 0f).toDouble(), prefs.getString("${p}_reason", "none") ?: "none")
@@ -122,7 +159,26 @@ class ProbeStore(context: Context) {
     fun resetAll() {
         val next = generation() + 1
         runCatching { traceFile.delete() }
-        prefs.edit().clear().putInt("generation", next).commit()
+        val e = prefs.edit()
+            .putString("stats_date", LocalDate.now().toString())
+            .putInt("generation", next)
+            .putString("last_event", "counters_reset")
+            .remove("test_platform")
+            .remove("test_id")
+            .remove("test_started")
+            .remove("test_start_count")
+            .remove("test_result")
+            .putInt("diagnostic_event_count", 0)
+        ProbeEventKind.entries.forEach { e.putInt("diagnostic_${it.name.lowercase()}_count", 0) }
+        TargetPlatform.entries.forEach { p ->
+            val k = p.name.lowercase()
+            e.putInt("${k}_count", 0)
+                .putLong("${k}_active_ms", 0L)
+                .putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name)
+                .putString("${k}_reason", "none")
+                .putFloat("${k}_confidence", 0f)
+        }
+        e.commit()
     }
 
     fun report(): JSONObject {
@@ -130,12 +186,16 @@ class ProbeStore(context: Context) {
         TargetPlatform.entries.forEach { p -> val s = stats(p); platforms.put(JSONObject().put("platform", p.name).put("package", p.packageName).put("installed_version", installedVersion(p.packageName)).put("detected_videos", s.count).put("active_seconds", s.activeSeconds).put("state", s.state).put("confidence", s.confidence).put("reason", s.reason)) }
         val counts = JSONObject()
         ProbeEventKind.entries.forEach { counts.put(it.name, prefs.getInt("diagnostic_${it.name.lowercase()}_count", 0)) }
+        val enabled = accessibilityEnabled()
+        val alive = serviceAlive()
         return JSONObject()
-            .put("schema_version", 4)
+            .put("schema_version", 5)
             .put("local_date", LocalDate.now().toString())
             .put("generated_at", Instant.now().toString())
             .put("app_version", BuildConfig.VERSION_NAME)
-            .put("automatic_counting", true)
+            .put("automatic_counting", enabled && alive)
+            .put("accessibility_service_enabled", enabled)
+            .put("accessibility_service_alive", alive)
             .put("network_permission_declared", false)
             .put("raw_text_collected", false)
             .put("screenshots_collected", false)
@@ -163,9 +223,16 @@ class ProbeStore(context: Context) {
             val row = trace.optJSONObject(i) ?: continue
             if (row.optString("platform") != platform.name) continue
             val kind = row.optString("kind")
-            if (kind != ProbeEventKind.SCROLLED.name && kind != ProbeEventKind.VIEW_SELECTED.name) continue
+            val sourceId = row.optString("source_id")
+            val isCandidate = if (platform == TargetPlatform.YOUTUBE) {
+                kind == ProbeEventKind.CONTENT_CHANGED.name && sourceId.contains("reel_recycler", ignoreCase = true)
+            } else {
+                kind == ProbeEventKind.SCROLLED.name || kind == ProbeEventKind.VIEW_SELECTED.name
+            }
+            if (!isCandidate) continue
             val t = row.optLong("t", Long.MIN_VALUE)
-            if (last == Long.MIN_VALUE || t - last >= 320L) { count += 1; last = t }
+            val cooldown = if (platform == TargetPlatform.YOUTUBE) 220L else 320L
+            if (last == Long.MIN_VALUE || t - last >= cooldown) { count += 1; last = t }
         }
         return count
     }
@@ -183,7 +250,7 @@ class ProbeStore(context: Context) {
         runCatching { traceFile.delete() }
         val e = prefs.edit().putString("stats_date", today).putInt("generation", generation() + 1).remove("test_platform").remove("test_result").putInt("diagnostic_event_count", 0)
         ProbeEventKind.entries.forEach { e.putInt("diagnostic_${it.name.lowercase()}_count", 0) }
-        TargetPlatform.entries.forEach { p -> val k = p.name.lowercase(); e.putInt("${k}_count", 0).putLong("${k}_active_ms", 0L).putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name).putFloat("${k}_confidence", 0f) }
+        TargetPlatform.entries.forEach { p -> val k = p.name.lowercase(); e.putInt("${k}_count", 0).putLong("${k}_active_ms", 0L).putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name).putString("${k}_reason", "none").putFloat("${k}_confidence", 0f) }
         e.commit()
     }
 
