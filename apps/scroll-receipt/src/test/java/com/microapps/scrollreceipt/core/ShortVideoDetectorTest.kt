@@ -33,27 +33,42 @@ class ShortVideoDetectorTest {
         assertEquals(1, d.process(e(1200, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, setOf("reel_watch"))).increment)
     }
 
-    @Test fun youtubeRedmiTraceCountsFiveVisibleShorts() {
+    @Test fun youtubeRedmiSourceTraceCountsFiveVisibleShorts() {
         val d = ShortVideoDetector(TargetPlatform.YOUTUBE)
-        val ids = setOf(
-            "com.google.android.youtube:id/reel_time_bar",
-            "com.google.android.youtube:id/reel_recycler",
-            "com.google.android.youtube:id/reel_player_page_container",
-            "com.google.android.youtube:id/reel_progress_bar"
-        )
+        val reelId = "com.google.android.youtube:id/reel_recycler"
         var total = 0
-        total += d.process(e(1000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false)).increment
-        total += d.process(e(1002, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false)).increment
-        listOf(1498L, 1755L, 2719L, 36718L).forEach { t ->
+
+        // The exact reel_recycler source is strong enough to identify the first
+        // visible Short without traversing the full accessibility tree.
+        total += d.process(
+            e(
+                1000,
+                TargetPlatform.YOUTUBE,
+                ProbeEventKind.CONTENT_CHANGED,
+                setOf(reelId),
+                dominant = false,
+                eventClass = "android.support.v7.widget.RecyclerView",
+                sourceId = reelId,
+                sourceClass = "android.support.v7.widget.RecyclerView"
+            )
+        ).increment
+
+        // A duplicate event immediately after entering the reel is ignored.
+        total += d.process(
+            e(1100, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, setOf(reelId), dominant = false, sourceId = reelId)
+        ).increment
+
+        // Four genuinely separate reel transitions -> five visible Shorts total.
+        listOf(2000L, 3500L, 5000L, 6500L).forEach { t ->
             total += d.process(
                 e(
                     t,
                     TargetPlatform.YOUTUBE,
                     ProbeEventKind.CONTENT_CHANGED,
-                    ids,
+                    setOf(reelId),
                     dominant = false,
                     eventClass = "android.support.v7.widget.RecyclerView",
-                    sourceId = "com.google.android.youtube:id/reel_recycler",
+                    sourceId = reelId,
                     sourceClass = "android.support.v7.widget.RecyclerView"
                 )
             ).increment
