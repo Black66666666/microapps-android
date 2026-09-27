@@ -12,7 +12,9 @@ class ShortVideoDetectorTest {
         ids: Set<String>,
         dy: Int = 0,
         dominant: Boolean = true,
-        eventClass: String? = null
+        eventClass: String? = null,
+        sourceId: String? = null,
+        sourceClass: String? = null
     ) = ProbeEvent(
         timestampMs = t,
         packageName = p.packageName,
@@ -20,15 +22,15 @@ class ShortVideoDetectorTest {
         viewIds = ids,
         scrollDeltaY = dy,
         dominantFullScreenScrollable = dominant,
-        eventClass = eventClass
+        eventClass = eventClass,
+        sourceId = sourceId,
+        sourceClass = sourceClass
     )
 
-    @Test fun youtubeCountsAndDeduplicates() {
+    @Test fun youtubeCountsGenericAndDeduplicates() {
         val d = ShortVideoDetector(TargetPlatform.YOUTUBE)
         assertEquals(0, d.process(e(1000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, setOf("shorts_player"))).increment)
         assertEquals(1, d.process(e(1200, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, setOf("reel_watch"))).increment)
-        assertEquals(1, d.process(e(2000, TargetPlatform.YOUTUBE, ProbeEventKind.SCROLLED, setOf("shorts_player"), 900)).increment)
-        assertEquals(0, d.process(e(2100, TargetPlatform.YOUTUBE, ProbeEventKind.SCROLLED, setOf("shorts_player"), 900)).increment)
     }
 
     @Test fun youtubeRedmiTraceCountsFiveVisibleShorts() {
@@ -42,10 +44,46 @@ class ShortVideoDetectorTest {
         var total = 0
         total += d.process(e(1000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false)).increment
         total += d.process(e(1002, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false)).increment
-        listOf(20560L, 35346L, 52065L, 74152L).forEach { t ->
-            total += d.process(e(t, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false, eventClass = "android.widget.SeekBar")).increment
+        listOf(1498L, 1755L, 2719L, 36718L).forEach { t ->
+            total += d.process(
+                e(
+                    t,
+                    TargetPlatform.YOUTUBE,
+                    ProbeEventKind.CONTENT_CHANGED,
+                    ids,
+                    dominant = false,
+                    eventClass = "android.support.v7.widget.RecyclerView",
+                    sourceId = "com.google.android.youtube:id/reel_recycler",
+                    sourceClass = "android.support.v7.widget.RecyclerView"
+                )
+            ).increment
         }
         assertEquals(5, total)
+    }
+
+    @Test fun youtubeSeekBarProgressDoesNotCreateExtraVideos() {
+        val d = ShortVideoDetector(TargetPlatform.YOUTUBE)
+        val ids = setOf(
+            "com.google.android.youtube:id/reel_recycler",
+            "com.google.android.youtube:id/reel_player_page_container",
+            "com.google.android.youtube:id/reel_progress_bar"
+        )
+        d.process(e(1000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false))
+        assertEquals(1, d.process(e(1002, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false)).increment)
+        assertEquals(0, d.process(e(15000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false, eventClass = "android.widget.SeekBar")).increment)
+        assertEquals(0, d.process(e(30000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false, eventClass = "android.widget.SeekBar")).increment)
+    }
+
+    @Test fun hiddenYoutubeSearchNodeDoesNotPauseShorts() {
+        val d = ShortVideoDetector(TargetPlatform.YOUTUBE)
+        val ids = setOf(
+            "com.google.android.youtube:id/reel_recycler",
+            "com.google.android.youtube:id/reel_player_page_container",
+            "com.google.android.youtube:id/menu_search"
+        )
+        d.process(e(1000, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false))
+        val active = d.process(e(1002, TargetPlatform.YOUTUBE, ProbeEventKind.CONTENT_CHANGED, ids, dominant = false))
+        assertEquals(DetectorState.SHORT_MODE_ACTIVE, active.state)
     }
 
     @Test fun ordinaryYoutubeFeedDoesNotCountAsShorts() {
@@ -63,9 +101,17 @@ class ShortVideoDetectorTest {
         val d = ShortVideoDetector(TargetPlatform.INSTAGRAM)
         d.process(e(1000, TargetPlatform.INSTAGRAM, ProbeEventKind.CONTENT_CHANGED, setOf("reels_viewer")))
         d.process(e(1200, TargetPlatform.INSTAGRAM, ProbeEventKind.CONTENT_CHANGED, setOf("clips_viewer")))
-        val paused = d.process(e(2000, TargetPlatform.INSTAGRAM, ProbeEventKind.CONTENT_CHANGED, setOf("comments_bottom_sheet")))
+        val paused = d.process(
+            e(
+                2000,
+                TargetPlatform.INSTAGRAM,
+                ProbeEventKind.CONTENT_CHANGED,
+                setOf("comments_bottom_sheet"),
+                sourceId = "com.instagram.android:id/comments_bottom_sheet"
+            )
+        )
         assertEquals(DetectorState.PAUSED, paused.state)
-        assertEquals(0, d.process(e(2600, TargetPlatform.INSTAGRAM, ProbeEventKind.SCROLLED, setOf("comments_bottom_sheet"), 900)).increment)
+        assertEquals(0, d.process(e(2600, TargetPlatform.INSTAGRAM, ProbeEventKind.SCROLLED, setOf("comments_bottom_sheet"), 900, sourceId = "com.instagram.android:id/comments_bottom_sheet")).increment)
     }
 
     @Test fun packageExitStopsTiming() {
