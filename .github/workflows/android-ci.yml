@@ -97,6 +97,8 @@ jobs:
           profile: pixel_7
           disable-animations: true
           script: |
-            tasks=()
-            for m in $APP_MODULES; do tasks+=(":apps:$m:connectedDebugAndroidTest"); done
-            gradle --stacktrace "${tasks[@]}"
+            set --
+            for m in $APP_MODULES; do
+              set -- "$@" ":apps:$m:connectedDebugAndroidTest"
+            done
+            gradle --stacktrace "$@"
