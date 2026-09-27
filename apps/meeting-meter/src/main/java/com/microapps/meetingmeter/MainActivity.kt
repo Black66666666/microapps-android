@@ -5,10 +5,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,33 +27,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.microapps.designsystem.AppHeader
-import com.microapps.designsystem.GlassCard
-import com.microapps.designsystem.GradientButton
-import com.microapps.designsystem.NeonBackdrop
-import com.microapps.designsystem.NeonCyan
-import com.microapps.designsystem.NeonGreen
-import com.microapps.designsystem.NeonPink
-import com.microapps.designsystem.NeonPurple
-import com.microapps.designsystem.NeonTextField
-import com.microapps.designsystem.SecondaryButton
-import com.microapps.designsystem.StatusPill
-import com.microapps.designsystem.TextPrimary
-import com.microapps.designsystem.TextSecondary
-import com.microapps.designsystem.UnifiedAppTheme
+import com.microapps.designsystem.MeetingMeterAccent
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviGraphite
+import com.microapps.designsystem.TaviHeroObjectFrame
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSecondaryButton
+import com.microapps.designsystem.TaviStatusPill
+import com.microapps.designsystem.TaviSuccess
+import com.microapps.designsystem.TaviTextField
+import com.microapps.designsystem.TaviTextSecondary
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
 import kotlinx.coroutines.delay
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { UnifiedAppTheme { MeetingMeterScreen() } }
+        setContent { TaviTheme { MeetingMeterScreen() } }
     }
 }
 
@@ -82,82 +75,79 @@ private fun MeetingMeterScreen() {
     val rate = hourly.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0
     val cost = meetingCost(count, rate, elapsedMs)
 
-    NeonBackdrop {
+    TaviScreen {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AppHeader(
-                icon = "◷",
+            TaviTopBar(
                 title = "MeetingMeter",
-                subtitle = "Пусть стоимость встречи будет видна"
+                subtitle = "Пусть стоимость встречи будет видна",
+                accent = MeetingMeterAccent
             )
 
-            GlassCard(Modifier.fillMaxWidth()) {
+            TaviCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatusPill(if (running) "Встреча идёт" else "Готов к старту", if (running) NeonGreen else NeonCyan)
-                    Text("$count участников", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                    TaviStatusPill(
+                        if (running) "Встреча идёт" else "Готов к старту",
+                        if (running) TaviSuccess else MeetingMeterAccent
+                    )
+                    Text("$count участников", color = TaviTextSecondary, style = MaterialTheme.typography.labelLarge)
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    NeonTextField(
+                    TaviTextField(
                         value = people,
                         onValueChange = { people = it.filter(Char::isDigit) },
                         label = "Участников",
+                        accent = MeetingMeterAccent,
                         modifier = Modifier.weight(1f).testTag("people"),
                         enabled = !running
                     )
-                    NeonTextField(
+                    TaviTextField(
                         value = hourly,
                         onValueChange = { hourly = it },
                         label = "Цена часа",
+                        accent = MeetingMeterAccent,
                         modifier = Modifier.weight(1f).testTag("hourly"),
                         enabled = !running
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                NeonTextField(
+                TaviTextField(
                     value = currency,
                     onValueChange = { currency = it.take(3) },
                     label = "Валюта",
+                    accent = MeetingMeterAccent,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !running
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .size(220.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(
-                                NeonCyan.copy(alpha = 0.14f),
-                                NeonPurple.copy(alpha = 0.09f),
-                                com.microapps.designsystem.NightRaised.copy(alpha = 0.96f)
-                            )
-                        )
-                    )
-                    .border(4.dp, if (running) NeonGreen else NeonCyan, CircleShape),
-                contentAlignment = Alignment.Center
+            TaviHeroObjectFrame(
+                modifier = Modifier.size(220.dp),
+                accent = if (running) TaviSuccess else MeetingMeterAccent
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         formatDuration(elapsedMs),
-                        color = TextPrimary,
+                        color = TaviGraphite,
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.testTag("duration")
                     )
                     Spacer(Modifier.height(4.dp))
-                    Text("стоимость сейчас", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                    Text("стоимость сейчас", color = TaviTextSecondary, style = MaterialTheme.typography.labelMedium)
                     Text(
                         "${String.format(Locale.US, "%.2f", cost)} $currency",
-                        color = if (running) NeonPink else NeonCyan,
+                        color = MeetingMeterAccent,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.testTag("cost")
@@ -166,9 +156,9 @@ private fun MeetingMeterScreen() {
             }
 
             if (!running) {
-                GradientButton(
+                TaviPrimaryButton(
                     text = if (elapsedMs == 0L) "Начать встречу" else "Продолжить",
-                    leading = "▶",
+                    leading = "dot",
                     modifier = Modifier.fillMaxWidth().testTag("start"),
                     enabled = count > 0 && rate > 0,
                     onClick = {
@@ -177,9 +167,9 @@ private fun MeetingMeterScreen() {
                     }
                 )
             } else {
-                GradientButton(
+                TaviPrimaryButton(
                     text = "Остановить",
-                    leading = "Ⅱ",
+                    leading = "dot",
                     modifier = Modifier.fillMaxWidth().testTag("stop"),
                     onClick = {
                         elapsedMs = SystemClock.elapsedRealtime() - startedAt
@@ -189,12 +179,12 @@ private fun MeetingMeterScreen() {
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SecondaryButton(
+                TaviSecondaryButton(
                     text = "Сброс",
                     modifier = Modifier.weight(1f),
                     onClick = { running = false; elapsedMs = 0L; startedAt = 0L }
                 )
-                SecondaryButton(
+                TaviSecondaryButton(
                     text = "Поделиться",
                     modifier = Modifier.weight(1f),
                     enabled = elapsedMs > 0,
@@ -206,12 +196,12 @@ private fun MeetingMeterScreen() {
                 )
             }
 
-            GlassCard(Modifier.fillMaxWidth()) {
-                Text("Формула", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+            TaviCard(Modifier.fillMaxWidth()) {
+                Text("Формула", color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Участники × средняя стоимость часа × длительность. Это ориентир, а не бухгалтерский расчёт.",
-                    color = TextSecondary,
+                    color = TaviTextSecondary,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
