@@ -1,0 +1,1 @@
+All five existing app manifests now explicitly reference launcher icons.
