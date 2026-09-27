@@ -1,0 +1,1 @@
+Wave 1 launcher icon resources and manifest declarations are implemented for all five existing applications. The branch now includes instrumented coverage to prevent a missing-icon regression.
