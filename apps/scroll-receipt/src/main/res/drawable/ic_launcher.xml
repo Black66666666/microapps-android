@@ -1,6 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <corners android:radius="18dp" />
-    <gradient android:angle="0" android:startColor="#31D9FF" android:centerColor="#8E5CFF" android:endColor="#FF4FD8" />
-    <size android:width="108dp" android:height="108dp" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#F4F0E7" />
+            <stroke android:width="1dp" android:color="#D9D3C7" />
+        </shape>
+    </item>
+    <item android:width="62dp" android:height="70dp" android:gravity="center">
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <solid android:color="#191A18" />
+        </shape>
+    </item>
+    <item android:width="34dp" android:height="4dp" android:gravity="center" android:top="-22dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="2dp" />
+            <solid android:color="#FFFDF7" />
+        </shape>
+    </item>
+    <item android:width="34dp" android:height="4dp" android:gravity="center" android:top="-4dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="2dp" />
+            <solid android:color="#FFFDF7" />
+        </shape>
+    </item>
+    <item android:width="24dp" android:height="4dp" android:gravity="center" android:top="14dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="2dp" />
+            <solid android:color="#FFFDF7" />
+        </shape>
+    </item>
+    <item android:width="20dp" android:height="20dp" android:gravity="top|right" android:top="13dp" android:right="13dp">
+        <shape android:shape="oval">
+            <solid android:color="#B7F000" />
+            <stroke android:width="1dp" android:color="#8DAE00" />
+        </shape>
+    </item>
+</layer-list>
