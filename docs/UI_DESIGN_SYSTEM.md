@@ -49,13 +49,28 @@ Canonical machine-readable values live in `docs/ui/tavi-tokens.json`.
 
 ### App accents
 
-Initial mapping:
-
 - Screenshot Inbox: orange `#FF8252`
+- MatchChoice: rose `#EF6F91`
+- WhoBringsWhat: ochre `#E2A934`
 - BuyTomorrow: blue `#3E87F7`
 - MeetingMeter: violet `#8A5CE6`
+- Scroll Receipt: terracotta `#D85A47`
+- WorthIt: green `#3C9B7B`
+- BorrowBack: indigo `#5C7EE6`
+- BoxQR: teal `#2C9FA3`
+- Refill: mint `#4DAF8C`
+- TurnKeeper: dusty rose `#D96C7C`
+- FiveMinutes: amber `#E59B3A`
+- ReturnClock: muted blue `#5F7FC9`
+- WhereIsIt: plum `#A36CCB`
+- OpenedOn: rust `#D47352`
+- PackTogether: cyan `#4F9AB8`
+- Promise: pink `#E56E8D`
+- GiftPocket: caramel `#C48A4C`
+- BeforeLeave: moss `#6E8E5E`
+- FairPick: purple `#8E6AB8`
 
-Other apps receive one accent each, selected to remain distinct inside the same warm-neutral system. Accent colors must not replace the TAVI lime brand marker.
+Accent colors remain secondary to the shared warm-neutral system and must never replace the TAVI lime brand marker.
 
 ## 4. Shape language
 
@@ -188,11 +203,21 @@ Current mapping:
 - WhoBringsWhat — a set of assignable tokens.
 - BuyTomorrow — a waiting capsule / object held in pause.
 - MeetingMeter — a tactile circular meter / recessed dial.
+- Scroll Receipt — a compact receipt strip with measured lines.
 - WorthIt — value/balance object.
 - BorrowBack — paired linked objects indicating out/return.
 - BoxQR — container object with embedded code plane.
 - Refill — fill-level vessel.
 - TurnKeeper — moving token passed between participants.
+- FiveMinutes — compact tactile timer marked by five.
+- ReturnClock — deadline/calendar object.
+- WhereIsIt — physical-place marker object.
+- OpenedOn — opened container/jar with lid state.
+- PackTogether — compact travel case.
+- Promise — two linked loops representing commitment.
+- GiftPocket — wrapped pocket-sized gift object.
+- BeforeLeave — tactile door/exit object.
+- FairPick — fair selector/die object with remembered state.
 
 These metaphors may evolve, but every app must have exactly one primary object metaphor.
 
@@ -223,4 +248,4 @@ A screenshot or generated concept image alone never overrides this specification
 
 ## 14. Current status
 
-The visual direction is selected. The next implementation step is to replace the existing neon/glass shared design system with the TAVI light tactile system while preserving existing app behavior and tests.
+The visual direction is selected and the implementation target is all 20 Android micro-apps. The shared TAVI system must own palette, typography, signature geometry, lime status dot, common controls and the hero-object language. Existing app behavior and tests remain unchanged while the previous neon/glass and neutral placeholder UIs are removed from the active product family.

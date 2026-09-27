@@ -4,20 +4,28 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSecondaryButton
+import com.microapps.designsystem.TaviTextField
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
+import com.microapps.designsystem.TaviWarmOrange
+import com.microapps.designsystem.taviAccentFor
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
@@ -28,6 +36,7 @@ import java.util.UUID
 
 internal const val STORE = "microapp_data"
 internal val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+private val LocalAppAccent = staticCompositionLocalOf<Color> { TaviWarmOrange }
 
 internal fun prefs(context: Context) = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 internal fun loadArray(context: Context, key: String): JSONArray = runCatching {
@@ -55,7 +64,7 @@ internal fun shareText(context: Context, text: String, title: String = "Поде
 
 @Composable
 fun NeutralAppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(content = content)
+    TaviTheme(content = content)
 }
 
 @Composable
@@ -64,27 +73,70 @@ fun AppShell(
     subtitle: String,
     content: @Composable () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(PaddingValues(20.dp)),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Text(title, style = MaterialTheme.typography.headlineMedium)
-        Text(subtitle, style = MaterialTheme.typography.bodyMedium)
-        content()
+    val accent = taviAccentFor(title)
+    CompositionLocalProvider(LocalAppAccent provides accent) {
+        TaviScreen {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                TaviTopBar(title = title, subtitle = subtitle, accent = accent)
+                Spacer(Modifier.height(8.dp))
+                content()
+            }
+        }
     }
 }
 
 @Composable
-internal fun FormField(value: String, onValueChange: (String) -> Unit, label: String, singleLine: Boolean = true) {
-    OutlinedTextField(value = value, onValueChange = onValueChange, label = { Text(label) }, singleLine = singleLine, modifier = Modifier.fillMaxWidth())
+internal fun FormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    singleLine: Boolean = true
+) {
+    TaviTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        singleLine = singleLine,
+        accent = LocalAppAccent.current,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable
 internal fun ItemCard(content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { content() } }
+    TaviCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
+    }
 }
 
 @Composable
 internal fun PrimaryAction(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(text) }
+    TaviPrimaryButton(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        leading = "dot",
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+internal fun SecondaryAction(
+    text: String,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onClick: () -> Unit
+) {
+    TaviSecondaryButton(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+    )
 }

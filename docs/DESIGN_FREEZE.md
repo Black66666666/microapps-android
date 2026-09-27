@@ -1,7 +1,7 @@
-# Visual design freeze
+# Visual design status
 
-The remaining 15 Android apps must not adopt the current shared visual design while the product-wide design direction is being revised.
+The visual design freeze is lifted.
 
-During the freeze, work is limited to product functionality, persistence, permissions, notifications/sharing where required, launcher icons, tests, lint and emulator validation.
+TAVI / Pocket Objects is the approved product-wide direction and `docs/UI_DESIGN_SYSTEM.md` together with `docs/ui/tavi-tokens.json` is the current source of truth.
 
-A unified visual redesign will be applied separately after the new design direction is approved.
+All 20 Android apps must use the shared implementation in `core/designsystem`. The previous neutral placeholder UI for the remaining 15 apps is no longer an active design state.

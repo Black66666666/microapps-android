@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +42,10 @@ fun TurnKeeperScreen() {
                 current = nextTurn(current, people.size)
                 prefs(context).edit().putInt("turn_current", current).apply()
             }
-            Button(onClick = { current = 0; prefs(context).edit().putInt("turn_current", 0).apply() }) { Text("Сбросить") }
+            SecondaryAction("Сбросить") {
+                current = 0
+                prefs(context).edit().putInt("turn_current", 0).apply()
+            }
         }
     }
 }
@@ -104,7 +106,11 @@ fun ReturnClockScreen() {
             ItemCard {
                 Text(item.optString("product"))
                 Text("Срок: $date · ${if (left >= 0) "осталось $left дн." else "просрочено ${-left} дн."}")
-                if (!item.optBoolean("done")) Button(onClick = { val next = JSONArray(items.toString()); next.getJSONObject(i).put("done", true); save(next) }) { Text("Возврат закрыт") }
+                if (!item.optBoolean("done")) {
+                    SecondaryAction("Возврат закрыт") {
+                        val next = JSONArray(items.toString()); next.getJSONObject(i).put("done", true); save(next)
+                    }
+                }
             }
         }
     }

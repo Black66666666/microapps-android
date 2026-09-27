@@ -7,13 +7,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.Settings
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -72,7 +67,7 @@ fun ScrollReceiptScreen() {
                 context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             }
         } else {
-            PrimaryAction("Обновить") { refresh++ }
+            SecondaryAction("Обновить") { refresh++ }
             PrimaryAction("Поделиться чеком") {
                 shareText(context, "Scroll Receipt: сегодня я провёл $minutes мин в TikTok / Reels / YouTube и посмотрел примерно $clips коротких роликов.")
             }
@@ -105,9 +100,9 @@ fun WorthItScreen() {
                 Text(item.optString("name"))
                 Text("Использований: $uses")
                 Text("Стоимость за использование: %.2f".format(costPerUse(itemPrice, uses)))
-                Button(onClick = {
+                SecondaryAction("Использовал ещё раз") {
                     val next = JSONArray(items.toString()); val updated = next.getJSONObject(i); updated.put("uses", uses + 1); save(next)
-                }) { Text("Использовал ещё раз") }
+                }
             }
         }
     }
@@ -137,9 +132,11 @@ fun BorrowBackScreen() {
                 if (item.optString("due").isNotBlank()) Text("Срок: ${item.optString("due")}")
                 Text(if (item.optBoolean("returned")) "Возвращено" else "Ещё не вернули")
                 if (!item.optBoolean("returned")) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { shareText(context, "Привет! Напоминаю про ${item.optString("thing")}, которое я тебе одолжил${if (item.optString("due").isNotBlank()) " до ${item.optString("due")}" else ""}.") }) { Text("Напомнить") }
-                        Button(onClick = { val next = JSONArray(items.toString()); next.getJSONObject(i).put("returned", true); save(next) }) { Text("Вернули") }
+                    SecondaryAction("Напомнить") {
+                        shareText(context, "Привет! Напоминаю про ${item.optString("thing")}, которое я тебе одолжил${if (item.optString("due").isNotBlank()) " до ${item.optString("due")}" else ""}.")
+                    }
+                    SecondaryAction("Вернули") {
+                        val next = JSONArray(items.toString()); next.getJSONObject(i).put("returned", true); save(next)
                     }
                 }
             }
@@ -180,7 +177,7 @@ fun BoxQrScreen() {
             ItemCard {
                 Text(box.optString("name"))
                 Text(box.optString("contents").ifBlank { "Содержимое пока не указано" })
-                Button(onClick = { shownQr = box.optString("id") }) { Text("Показать QR") }
+                SecondaryAction("Показать QR") { shownQr = box.optString("id") }
             }
         }
     }
@@ -212,7 +209,9 @@ fun RefillScreen() {
                 Text(item.optString("name"))
                 Text("Последнее пополнение: $last")
                 Text("Следующее примерно: $nextDate")
-                Button(onClick = { val next = JSONArray(items.toString()); next.getJSONObject(i).put("last", today().toString()); save(next) }) { Text("Купил / пополнил сегодня") }
+                SecondaryAction("Купил / пополнил сегодня") {
+                    val next = JSONArray(items.toString()); next.getJSONObject(i).put("last", today().toString()); save(next)
+                }
             }
         }
     }
