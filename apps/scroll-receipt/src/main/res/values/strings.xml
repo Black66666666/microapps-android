@@ -10,9 +10,11 @@
     <string name="counting_on_short">ON</string>
     <string name="counting_off_short">OFF</string>
     <string name="service_enabled_detail">Counting is automatic. You can close Scroll Receipt; the Android accessibility service keeps listening for supported short-video activity.</string>
-    <string name="service_disabled_detail">The accessibility service is not active right now. Enable Scroll Receipt in Accessibility settings before testing.</string>
-    <string name="service_not_active">Scroll Receipt accessibility service is not active. Enable it first; calibration will not start while it is off.</string>
+    <string name="service_disabled_detail">Scroll Receipt is not enabled in Accessibility settings. Enable it once before testing.</string>
+    <string name="service_stopped_detail">Accessibility permission is still enabled, but Android stopped the service. Open Accessibility settings and switch Scroll Receipt off, then on again.</string>
+    <string name="service_not_active">Scroll Receipt accessibility service is not active. Open Accessibility settings and restart it before calibration.</string>
     <string name="enable_counting">Enable automatic counting</string>
+    <string name="restart_counting">Restart accessibility service</string>
     <string name="open_accessibility">Accessibility settings</string>
     <string name="today">TODAY</string>
     <string name="videos">SHORT VIDEOS</string>
