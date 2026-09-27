@@ -28,7 +28,8 @@ object AccessibilitySnapshotFactory {
         var visited = 0
         var dominantScrollable = false
         val screenArea = (metrics.widthPixels.toLong() * metrics.heightPixels.toLong()).coerceAtLeast(1L)
-        event.className?.toString()?.let { classes.add(it.take(160)) }
+        val eventClass = event.className?.toString()?.take(160)
+        eventClass?.let { classes.add(it) }
         if (root != null) {
             val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
             queue.add(root to 0)
@@ -54,24 +55,27 @@ object AccessibilitySnapshotFactory {
         val deltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0
         return Snapshot(
             event = ProbeEvent(
-                event.eventTime,
-                event.packageName?.toString().orEmpty(),
-                mapKind(event.eventType),
-                ids,
-                classes,
-                event.fromIndex,
-                event.toIndex,
-                event.itemCount,
-                deltaY,
-                event.scrollY,
-                event.maxScrollY,
-                dominantScrollable
+                timestampMs = event.eventTime,
+                packageName = event.packageName?.toString().orEmpty(),
+                kind = mapKind(event.eventType),
+                viewIds = ids,
+                classNames = classes,
+                fromIndex = event.fromIndex,
+                toIndex = event.toIndex,
+                itemCount = event.itemCount,
+                scrollDeltaY = deltaY,
+                scrollY = event.scrollY,
+                maxScrollY = event.maxScrollY,
+                dominantFullScreenScrollable = dominantScrollable,
+                eventClass = eventClass,
+                sourceId = sourceId,
+                sourceClass = sourceClass
             ),
             nodes = visited,
             viewIds = ids,
             classes = classes,
             rawEventType = event.eventType,
-            eventClass = event.className?.toString()?.take(160),
+            eventClass = eventClass,
             sourceId = sourceId,
             sourceClass = sourceClass,
             action = event.action
