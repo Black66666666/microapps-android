@@ -24,7 +24,10 @@ data class ProbeEvent(
     val scrollDeltaY: Int = 0,
     val scrollY: Int = 0,
     val maxScrollY: Int = 0,
-    val dominantFullScreenScrollable: Boolean = false
+    val dominantFullScreenScrollable: Boolean = false,
+    val eventClass: String? = null,
+    val sourceId: String? = null,
+    val sourceClass: String? = null
 )
 
 data class DetectorDecision(
