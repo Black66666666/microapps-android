@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [main, wave-1-foundation, wave-1-unified-design]
+    branches: [main, wave-1-foundation, wave-1-unified-design, scroll-receipt-gate0a]
   pull_request:
     branches: [main]
 
