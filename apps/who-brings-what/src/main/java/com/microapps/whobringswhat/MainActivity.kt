@@ -28,23 +28,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.microapps.designsystem.AppHeader
-import com.microapps.designsystem.GlassCard
-import com.microapps.designsystem.GradientButton
-import com.microapps.designsystem.NeonBackdrop
-import com.microapps.designsystem.NeonCyan
-import com.microapps.designsystem.NeonGreen
-import com.microapps.designsystem.NeonTextField
-import com.microapps.designsystem.SectionTitle
-import com.microapps.designsystem.StatusPill
-import com.microapps.designsystem.TextPrimary
-import com.microapps.designsystem.TextSecondary
-import com.microapps.designsystem.UnifiedAppTheme
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviGraphite
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSectionTitle
+import com.microapps.designsystem.TaviStatusPill
+import com.microapps.designsystem.TaviTextField
+import com.microapps.designsystem.TaviTextSecondary
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
+import com.microapps.designsystem.TaviSuccess
+import com.microapps.designsystem.WhoBringsWhatAccent
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { UnifiedAppTheme { WhoBringsWhatScreen() } }
+        setContent { TaviTheme { WhoBringsWhatScreen() } }
     }
 }
 
@@ -61,39 +61,41 @@ private fun WhoBringsWhatScreen() {
         prefs.edit().putString("state", BringStateCodec.encode(BringState(name, currentItems))).apply()
     }
 
-    NeonBackdrop {
+    TaviScreen {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AppHeader(
-                icon = "👥",
+            TaviTopBar(
                 title = "WhoBringsWhat",
-                subtitle = "Планируйте вместе без путаницы"
+                subtitle = "Планируйте вместе без путаницы",
+                accent = WhoBringsWhatAccent
             )
 
-            GlassCard(Modifier.fillMaxWidth()) {
-                StatusPill("Совместный список", NeonCyan)
+            TaviCard(Modifier.fillMaxWidth()) {
+                TaviStatusPill("Совместный список", WhoBringsWhatAccent)
                 Spacer(Modifier.height(12.dp))
-                NeonTextField(
+                TaviTextField(
                     value = eventName,
                     onValueChange = { value -> eventName = value; persist(name = value) },
                     label = "Событие",
+                    accent = WhoBringsWhatAccent,
                     modifier = Modifier.fillMaxWidth().testTag("event-name")
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth()) {
-                    NeonTextField(
+                    TaviTextField(
                         value = itemText,
                         onValueChange = { itemText = it },
                         label = "Что нужно",
+                        accent = WhoBringsWhatAccent,
                         modifier = Modifier.weight(1f).testTag("item-input")
                     )
                     Spacer(Modifier.width(10.dp))
-                    GradientButton(
+                    TaviPrimaryButton(
                         text = "+",
                         modifier = Modifier.width(64.dp).testTag("add-item"),
                         onClick = {
@@ -109,36 +111,41 @@ private fun WhoBringsWhatScreen() {
             }
 
             if (items.isEmpty()) {
-                GlassCard(Modifier.fillMaxWidth()) {
-                    Text("Список пока пуст", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                TaviCard(Modifier.fillMaxWidth()) {
+                    Text("Список пока пуст", color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(5.dp))
-                    Text("Добавь вещи: лёд, еду, напитки, игры…", color = TextSecondary)
+                    Text("Добавь вещи: лёд, еду, напитки, игры…", color = TaviTextSecondary)
                 }
             } else {
-                SectionTitle("Кто что берёт")
+                TaviSectionTitle("Кто что берёт")
                 items.forEachIndexed { index, item ->
-                    GlassCard(Modifier.fillMaxWidth()) {
+                    TaviCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(item.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-                            if (item.owner.isBlank()) StatusPill("Свободно") else StatusPill("Назначено", NeonGreen)
+                            Text(item.name, color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
+                            if (item.owner.isBlank()) {
+                                TaviStatusPill("Свободно", WhoBringsWhatAccent)
+                            } else {
+                                TaviStatusPill("Назначено", TaviSuccess)
+                            }
                         }
                         Spacer(Modifier.height(10.dp))
-                        NeonTextField(
+                        TaviTextField(
                             value = item.owner,
                             onValueChange = { owner ->
                                 items[index] = item.copy(owner = owner)
                                 persist()
                             },
                             label = "Кто берёт",
+                            accent = WhoBringsWhatAccent,
                             modifier = Modifier.fillMaxWidth().testTag("owner-$index")
                         )
                     }
                 }
             }
 
-            GradientButton(
+            TaviPrimaryButton(
                 text = "Поделиться списком",
-                leading = "↗",
+                leading = "dot",
                 modifier = Modifier.fillMaxWidth(),
                 enabled = items.isNotEmpty(),
                 onClick = {
