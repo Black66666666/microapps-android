@@ -1,0 +1,1 @@
+Do not apply the previous unified neon/glass UI to the remaining 15 apps. Product functionality and release plumbing only until a replacement design is approved.

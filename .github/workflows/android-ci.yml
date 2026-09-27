@@ -2,13 +2,15 @@ name: Android CI
 
 on:
   push:
-    branches: [main, wave-1-foundation, wave-1-unified-design]
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      APP_MODULES: "screenshot-inbox match-choice who-brings-what buy-tomorrow meeting-meter scroll-receipt worth-it borrow-back box-qr refill turn-keeper five-minutes return-clock where-is-it opened-on pack-together promise gift-pocket before-leave fair-pick"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
@@ -22,23 +24,35 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Unit tests
-        run: gradle --stacktrace :apps:screenshot-inbox:testDebugUnitTest :apps:match-choice:testDebugUnitTest :apps:who-brings-what:testDebugUnitTest :apps:buy-tomorrow:testDebugUnitTest :apps:meeting-meter:testDebugUnitTest
+        shell: bash
+        run: |
+          tasks=(":core:microappkit:testDebugUnitTest")
+          for m in $APP_MODULES; do tasks+=(":apps:$m:testDebugUnitTest"); done
+          gradle --stacktrace "${tasks[@]}"
       - name: Lint
-        run: gradle --stacktrace :core:designsystem:lintDebug :apps:screenshot-inbox:lintDebug :apps:match-choice:lintDebug :apps:who-brings-what:lintDebug :apps:buy-tomorrow:lintDebug :apps:meeting-meter:lintDebug
-      - name: Compile instrumented test APKs
-        run: gradle --stacktrace :apps:screenshot-inbox:assembleDebugAndroidTest :apps:match-choice:assembleDebugAndroidTest :apps:who-brings-what:assembleDebugAndroidTest :apps:buy-tomorrow:assembleDebugAndroidTest :apps:meeting-meter:assembleDebugAndroidTest
-      - name: Build Wave 1 debug APKs
-        run: gradle --stacktrace :core:designsystem:assembleDebug :apps:screenshot-inbox:assembleDebug :apps:match-choice:assembleDebug :apps:who-brings-what:assembleDebug :apps:buy-tomorrow:assembleDebug :apps:meeting-meter:assembleDebug
+        shell: bash
+        run: |
+          tasks=(":core:designsystem:lintDebug" ":core:microappkit:lintDebug")
+          for m in $APP_MODULES; do tasks+=(":apps:$m:lintDebug"); done
+          gradle --stacktrace "${tasks[@]}"
+      - name: Build all debug APKs
+        shell: bash
+        run: |
+          tasks=(":core:designsystem:assembleDebug" ":core:microappkit:assembleDebug")
+          for m in $APP_MODULES; do tasks+=(":apps:$m:assembleDebug"); done
+          gradle --stacktrace "${tasks[@]}"
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: wave-1-unified-tested-apks
+          name: all-20-tested-apks
           path: apps/*/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
   emulator:
     needs: quality
     runs-on: ubuntu-latest
+    env:
+      APP_MODULES: "screenshot-inbox match-choice who-brings-what buy-tomorrow meeting-meter scroll-receipt worth-it borrow-back box-qr refill turn-keeper five-minutes return-clock where-is-it opened-on pack-together promise gift-pocket before-leave fair-pick"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
@@ -61,4 +75,4 @@ jobs:
           arch: x86_64
           profile: pixel_7
           disable-animations: true
-          script: gradle --stacktrace :apps:screenshot-inbox:connectedDebugAndroidTest :apps:match-choice:connectedDebugAndroidTest :apps:who-brings-what:connectedDebugAndroidTest :apps:buy-tomorrow:connectedDebugAndroidTest :apps:meeting-meter:connectedDebugAndroidTest
+          script: gradle --stacktrace $(for m in $APP_MODULES; do printf '%s ' ":apps:$m:connectedDebugAndroidTest"; done)
