@@ -31,6 +31,7 @@ class ScrollAccessibilityService : AccessibilityService() {
     }
     private val ticker = object : Runnable {
         override fun run() {
+            if (::store.isInitialized) store.markServiceHeartbeat()
             val active = timingPlatform
             if (active != null && rootInActiveWindow?.packageName?.toString() != active.packageName) { flushTime(); timingPlatform = null }
             flushTime(); handler.postDelayed(this, 1000L)
@@ -38,12 +39,18 @@ class ScrollAccessibilityService : AccessibilityService() {
     }
 
     override fun onServiceConnected() {
-        store = ProbeStore(this); generation = store.generation(); lastTick = SystemClock.elapsedRealtime()
+        store = ProbeStore(this)
+        generation = store.generation()
+        lastTick = SystemClock.elapsedRealtime()
+        store.markServiceConnected()
         registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_USER_PRESENT) })
-        handler.post(ticker); store.setLastEvent("service_connected")
+        handler.post(ticker)
+        store.setLastEvent("service_connected")
     }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || !::store.isInitialized) return
+        store.markServiceHeartbeat()
         if (generation != store.generation()) { flushTime(); engine.reset(); timingPlatform = null; generation = store.generation() }
         val platform = TargetPlatform.fromPackage(event.packageName?.toString()) ?: run { flushTime(); timingPlatform = null; return }
         val snapshot = AccessibilitySnapshotFactory.from(event, rootInActiveWindow, resources.displayMetrics)
@@ -53,12 +60,22 @@ class ScrollAccessibilityService : AccessibilityService() {
         if (screenOn && decision.activeForTiming) switchTiming(platform) else { flushTime(); timingPlatform = null }
         store.setLastEvent("${decision.platform.name}/${snapshot.event.kind}/${decision.state}/inc=${decision.increment}/nodes=${snapshot.nodes}/class=${snapshot.eventClass ?: "-"}")
     }
+
     override fun onInterrupt() { flushTime(); timingPlatform = null }
-    override fun onDestroy() { handler.removeCallbacks(ticker); flushTime(); runCatching { unregisterReceiver(screenReceiver) }; super.onDestroy() }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(ticker)
+        flushTime()
+        if (::store.isInitialized) store.markServiceDisconnected()
+        runCatching { unregisterReceiver(screenReceiver) }
+        super.onDestroy()
+    }
+
     private fun switchTiming(platform: TargetPlatform) {
         val now = SystemClock.elapsedRealtime(); if (timingPlatform == platform) { if (lastTick == 0L) lastTick = now; return }
         flushTime(); timingPlatform = platform; lastTick = now
     }
+
     private fun flushTime() {
         val platform = timingPlatform ?: run { lastTick = SystemClock.elapsedRealtime(); return }
         val now = SystemClock.elapsedRealtime(); val delta = (now - lastTick).coerceIn(0L, 5000L)
