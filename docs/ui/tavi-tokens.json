@@ -20,7 +20,22 @@
     "matchChoice": "#EF6F91",
     "whoBringsWhat": "#E2A934",
     "buyTomorrow": "#3E87F7",
-    "meetingMeter": "#8A5CE6"
+    "meetingMeter": "#8A5CE6",
+    "scrollReceipt": "#D85A47",
+    "worthIt": "#3C9B7B",
+    "borrowBack": "#5C7EE6",
+    "boxQr": "#2C9FA3",
+    "refill": "#4DAF8C",
+    "turnKeeper": "#D96C7C",
+    "fiveMinutes": "#E59B3A",
+    "returnClock": "#5F7FC9",
+    "whereIsIt": "#A36CCB",
+    "openedOn": "#D47352",
+    "packTogether": "#4F9AB8",
+    "promise": "#E56E8D",
+    "giftPocket": "#C48A4C",
+    "beforeLeave": "#6E8E5E",
+    "fairPick": "#8E6AB8"
   },
   "radiusDp": {
     "small": 14,
