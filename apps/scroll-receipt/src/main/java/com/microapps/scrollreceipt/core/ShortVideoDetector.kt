@@ -8,7 +8,7 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
     }
     private val pauseHints = setOf("comment", "comments", "bottom_sheet", "dialog")
     private val modeThreshold = if (platform == TargetPlatform.TIKTOK) 0.60 else 0.68
-    private val transitionCooldownMs = if (platform == TargetPlatform.YOUTUBE) 220L else 450L
+    private val transitionCooldownMs = if (platform == TargetPlatform.YOUTUBE) 750L else 450L
     private var state = DetectorState.OUTSIDE_TARGET_APP
     private var evidenceCount = 0
     private var lastStrongModeAt = 0L
@@ -34,6 +34,7 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
         val tokens = (event.viewIds + event.classNames).map { it.lowercase() }.toSet()
         val sourceTokens = listOfNotNull(event.sourceId, event.sourceClass, event.eventClass).map { it.lowercase() }
         val overlay = pauseHints.any { hint -> sourceTokens.any { it.contains(hint) } }
+        val exactYoutubeSignal = platform == TargetPlatform.YOUTUBE && isYoutubeReelSource(event)
         val confidence = confidence(event, tokens)
 
         if (overlay && state == DetectorState.SHORT_MODE_ACTIVE) {
@@ -41,32 +42,32 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
             return decision(0, confidence, "foreground overlay", false)
         }
 
-        if (confidence >= modeThreshold) {
+        if (confidence >= modeThreshold || exactYoutubeSignal) {
             lastStrongModeAt = event.timestampMs
             if (state == DetectorState.PAUSED) {
                 state = DetectorState.SHORT_MODE_ACTIVE
                 evidenceCount = 2
-                return decision(0, confidence, "returned to short-video UI", true)
+                return decision(0, confidence.coerceAtLeast(if (exactYoutubeSignal) 0.95 else 0.0), "returned to short-video UI", true)
             }
             if (state != DetectorState.SHORT_MODE_ACTIVE) {
-                evidenceCount += 1
+                evidenceCount += if (exactYoutubeSignal) 2 else 1
                 state = DetectorState.TARGET_APP_NON_SHORT_MODE
                 if (evidenceCount < 2) return decision(0, confidence, "short mode evidence 1/2", false)
                 state = DetectorState.SHORT_MODE_ACTIVE
                 if (!firstVideoSeen) {
                     firstVideoSeen = true
                     lastCountAt = event.timestampMs
-                    return decision(1, confidence, "short mode confirmed; first visible video", true)
+                    return decision(1, confidence.coerceAtLeast(if (exactYoutubeSignal) 0.95 else 0.0), "short mode confirmed; first visible video", true)
                 }
             }
             if (state == DetectorState.SHORT_MODE_ACTIVE && isTransition(event, tokens)) {
                 if (event.timestampMs - lastCountAt >= transitionCooldownMs) {
                     lastCountAt = event.timestampMs
-                    return decision(1, confidence, if (platform == TargetPlatform.YOUTUBE) "YouTube reel recycler changed" else "new short-video transition", true)
+                    return decision(1, confidence.coerceAtLeast(if (exactYoutubeSignal) 0.95 else 0.0), if (platform == TargetPlatform.YOUTUBE) "YouTube reel recycler changed" else "new short-video transition", true)
                 }
-                return decision(0, confidence, "duplicate transition event ignored", true)
+                return decision(0, confidence.coerceAtLeast(if (exactYoutubeSignal) 0.95 else 0.0), "duplicate transition event ignored", true)
             }
-            return decision(0, confidence, "short mode active", true)
+            return decision(0, confidence.coerceAtLeast(if (exactYoutubeSignal) 0.95 else 0.0), "short mode active", true)
         }
 
         if (state == DetectorState.SHORT_MODE_ACTIVE || state == DetectorState.PAUSED) {
@@ -85,7 +86,7 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
     }
 
     private fun confidence(event: ProbeEvent, tokens: Set<String>): Double {
-        if (platform == TargetPlatform.YOUTUBE && youtubeShortUi(tokens)) return 0.95
+        if (platform == TargetPlatform.YOUTUBE && (isYoutubeReelSource(event) || youtubeShortUi(tokens))) return 0.95
         val matching = strongHints.count { hint -> tokens.any { it.contains(hint) } }
         var score = when {
             matching >= 3 -> 0.75
@@ -100,14 +101,16 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
 
     private fun isTransition(event: ProbeEvent, tokens: Set<String>): Boolean {
         if (platform == TargetPlatform.YOUTUBE) {
-            return event.kind == ProbeEventKind.CONTENT_CHANGED &&
-                event.sourceId?.contains("reel_recycler", ignoreCase = true) == true &&
-                youtubeShortUi(tokens)
+            return isYoutubeReelSource(event) &&
+                (event.kind == ProbeEventKind.CONTENT_CHANGED || event.kind == ProbeEventKind.SCROLLED)
         }
         if (event.kind != ProbeEventKind.SCROLLED && event.kind != ProbeEventKind.VIEW_SELECTED) return false
         val indexChanged = event.fromIndex >= 0 && event.toIndex >= 0 && event.fromIndex != event.toIndex
         return indexChanged || kotlin.math.abs(event.scrollDeltaY) >= 160 || (event.dominantFullScreenScrollable && meaningfulScroll(event))
     }
+
+    private fun isYoutubeReelSource(event: ProbeEvent): Boolean =
+        event.sourceId?.contains("reel_recycler", ignoreCase = true) == true
 
     private fun youtubeShortUi(tokens: Set<String>): Boolean {
         val hasReelRecycler = tokens.any { it.contains("reel_recycler") }
