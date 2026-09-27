@@ -35,12 +35,6 @@ jobs:
           tasks=(":core:designsystem:lintDebug" ":core:microappkit:lintDebug")
           for m in $APP_MODULES; do tasks+=(":apps:$m:lintDebug"); done
           gradle --stacktrace "${tasks[@]}"
-      - name: Compile instrumented test APKs
-        shell: bash
-        run: |
-          tasks=()
-          for m in $APP_MODULES; do tasks+=(":apps:$m:assembleDebugAndroidTest"); done
-          gradle --stacktrace "${tasks[@]}"
       - name: Build all debug APKs
         shell: bash
         run: |
@@ -54,8 +48,29 @@ jobs:
           path: apps/*/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+  androidtest_compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [screenshot-inbox, match-choice, who-brings-what, buy-tomorrow, meeting-meter, scroll-receipt, worth-it, borrow-back, box-qr, refill, turn-keeper, five-minutes, return-clock, where-is-it, opened-on, pack-together, promise, gift-pocket, before-leave, fair-pick]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '8.9'
+      - name: Compile ${{ matrix.app }} instrumented tests
+        run: gradle --stacktrace :apps:${{ matrix.app }}:assembleDebugAndroidTest
+
   emulator:
-    needs: quality
+    needs: [quality, androidtest_compile]
     runs-on: ubuntu-latest
     env:
       APP_MODULES: "screenshot-inbox match-choice who-brings-what buy-tomorrow meeting-meter scroll-receipt worth-it borrow-back box-qr refill turn-keeper five-minutes return-clock where-is-it opened-on pack-together promise gift-pocket before-leave fair-pick"
