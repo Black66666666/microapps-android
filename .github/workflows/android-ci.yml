@@ -22,18 +22,29 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Unit tests
-        run: gradle --stacktrace :apps:screenshot-inbox:testDebugUnitTest :apps:match-choice:testDebugUnitTest :apps:who-brings-what:testDebugUnitTest :apps:buy-tomorrow:testDebugUnitTest :apps:meeting-meter:testDebugUnitTest
+        run: gradle --stacktrace :apps:screenshot-inbox:testDebugUnitTest :apps:match-choice:testDebugUnitTest :apps:who-brings-what:testDebugUnitTest :apps:buy-tomorrow:testDebugUnitTest :apps:meeting-meter:testDebugUnitTest :apps:scroll-receipt:testDebugUnitTest
       - name: Lint
-        run: gradle --stacktrace :core:designsystem:lintDebug :apps:screenshot-inbox:lintDebug :apps:match-choice:lintDebug :apps:who-brings-what:lintDebug :apps:buy-tomorrow:lintDebug :apps:meeting-meter:lintDebug
+        run: gradle --stacktrace :core:designsystem:lintDebug :apps:screenshot-inbox:lintDebug :apps:match-choice:lintDebug :apps:who-brings-what:lintDebug :apps:buy-tomorrow:lintDebug :apps:meeting-meter:lintDebug :apps:scroll-receipt:lintDebug
       - name: Compile instrumented test APKs
-        run: gradle --stacktrace :apps:screenshot-inbox:assembleDebugAndroidTest :apps:match-choice:assembleDebugAndroidTest :apps:who-brings-what:assembleDebugAndroidTest :apps:buy-tomorrow:assembleDebugAndroidTest :apps:meeting-meter:assembleDebugAndroidTest
-      - name: Build Wave 1 debug APKs
-        run: gradle --stacktrace :core:designsystem:assembleDebug :apps:screenshot-inbox:assembleDebug :apps:match-choice:assembleDebug :apps:who-brings-what:assembleDebug :apps:buy-tomorrow:assembleDebug :apps:meeting-meter:assembleDebug
-      - name: Upload APKs
+        run: gradle --stacktrace :apps:screenshot-inbox:assembleDebugAndroidTest :apps:match-choice:assembleDebugAndroidTest :apps:who-brings-what:assembleDebugAndroidTest :apps:buy-tomorrow:assembleDebugAndroidTest :apps:meeting-meter:assembleDebugAndroidTest :apps:scroll-receipt:assembleDebugAndroidTest
+      - name: Build Android debug APKs
+        run: gradle --stacktrace :core:designsystem:assembleDebug :apps:screenshot-inbox:assembleDebug :apps:match-choice:assembleDebug :apps:who-brings-what:assembleDebug :apps:buy-tomorrow:assembleDebug :apps:meeting-meter:assembleDebug :apps:scroll-receipt:assembleDebug
+      - name: Upload Wave 1 APKs
         uses: actions/upload-artifact@v4
         with:
           name: wave-1-unified-tested-apks
-          path: apps/*/build/outputs/apk/debug/*.apk
+          path: |
+            apps/screenshot-inbox/build/outputs/apk/debug/*.apk
+            apps/match-choice/build/outputs/apk/debug/*.apk
+            apps/who-brings-what/build/outputs/apk/debug/*.apk
+            apps/buy-tomorrow/build/outputs/apk/debug/*.apk
+            apps/meeting-meter/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      - name: Upload Scroll Receipt APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: scroll-receipt-gate0a-apk
+          path: apps/scroll-receipt/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
   emulator:
@@ -61,4 +72,4 @@ jobs:
           arch: x86_64
           profile: pixel_7
           disable-animations: true
-          script: gradle --stacktrace :apps:screenshot-inbox:connectedDebugAndroidTest :apps:match-choice:connectedDebugAndroidTest :apps:who-brings-what:connectedDebugAndroidTest :apps:buy-tomorrow:connectedDebugAndroidTest :apps:meeting-meter:connectedDebugAndroidTest
+          script: gradle --stacktrace :apps:screenshot-inbox:connectedDebugAndroidTest :apps:match-choice:connectedDebugAndroidTest :apps:who-brings-what:connectedDebugAndroidTest :apps:buy-tomorrow:connectedDebugAndroidTest :apps:meeting-meter:connectedDebugAndroidTest :apps:scroll-receipt:connectedDebugAndroidTest

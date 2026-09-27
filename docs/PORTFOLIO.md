@@ -10,6 +10,12 @@
 | BuyTomorrow | Delay impulse purchase and record avoided spend | Share saved amount | MVP |
 | MeetingMeter | Live meeting-cost counter | Share surprising meeting cost | MVP |
 
+## Product experiments
+
+| App | Core loop | Distribution hypothesis | Status |
+| --- | --- | --- | --- |
+| Scroll Receipt | Automatically count short-video consumption → show surprising result → share a receipt | Shared personal result drives installs | Gate 0A physical-device validation |
+
 ## Wave 2
 
 1. WorthIt
