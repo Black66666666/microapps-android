@@ -34,16 +34,9 @@ class ProbeStore(context: Context) {
         val newConfidence = decision.confidence.toFloat()
         val stateChanged = oldState != decision.state.name || oldReason != decision.reason || kotlin.math.abs(oldConfidence - newConfidence) >= 0.05f
         if (!stateChanged && decision.increment <= 0) return
-
         val e = prefs.edit()
-        if (stateChanged) {
-            e.putString(stateKey, decision.state.name)
-                .putString(reasonKey, decision.reason)
-                .putFloat(confidenceKey, newConfidence)
-        }
-        if (decision.increment > 0) {
-            e.putInt("${p}_count", prefs.getInt("${p}_count", 0) + decision.increment)
-        }
+        if (stateChanged) e.putString(stateKey, decision.state.name).putString(reasonKey, decision.reason).putFloat(confidenceKey, newConfidence)
+        if (decision.increment > 0) e.putInt("${p}_count", prefs.getInt("${p}_count", 0) + decision.increment)
         e.apply()
     }
 
@@ -73,12 +66,10 @@ class ProbeStore(context: Context) {
             .put("confidence", decision.confidence)
             .put("increment", decision.increment)
             .put("reason", decision.reason)
-
         runCatching {
             traceFile.appendText(row.toString() + "\n")
             trimTraceFile()
         }
-
         prefs.edit()
             .putInt("diagnostic_event_count", prefs.getInt("diagnostic_event_count", 0) + 1)
             .putInt("diagnostic_${event.kind.name.lowercase()}_count", prefs.getInt("diagnostic_${event.kind.name.lowercase()}_count", 0) + 1)
@@ -103,19 +94,29 @@ class ProbeStore(context: Context) {
             .putBoolean("connected", true)
             .putLong("heartbeat_wall_ms", now)
             .putLong("connected_wall_ms", now)
+            .putInt("connect_count", servicePrefs.getInt("connect_count", 0) + 1)
             .remove("last_error")
             .apply()
     }
 
     fun markServiceHeartbeat() {
+        servicePrefs.edit().putBoolean("connected", true).putLong("heartbeat_wall_ms", System.currentTimeMillis()).apply()
+    }
+
+    fun markServiceInterrupted() {
         servicePrefs.edit()
-            .putBoolean("connected", true)
-            .putLong("heartbeat_wall_ms", System.currentTimeMillis())
+            .putInt("interrupt_count", servicePrefs.getInt("interrupt_count", 0) + 1)
+            .putLong("last_interrupt_wall_ms", System.currentTimeMillis())
             .apply()
     }
 
     fun markServiceDisconnected() {
-        servicePrefs.edit().putBoolean("connected", false).putLong("heartbeat_wall_ms", System.currentTimeMillis()).apply()
+        servicePrefs.edit()
+            .putBoolean("connected", false)
+            .putLong("heartbeat_wall_ms", System.currentTimeMillis())
+            .putInt("disconnect_count", servicePrefs.getInt("disconnect_count", 0) + 1)
+            .putLong("last_disconnect_wall_ms", System.currentTimeMillis())
+            .apply()
     }
 
     fun recordServiceError(t: Throwable) {
@@ -131,13 +132,30 @@ class ProbeStore(context: Context) {
     fun serviceAlive(): Boolean {
         if (!servicePrefs.getBoolean("connected", false)) return false
         val heartbeat = servicePrefs.getLong("heartbeat_wall_ms", 0L)
-        return heartbeat > 0L && System.currentTimeMillis() - heartbeat <= 15_000L
+        return heartbeat > 0L && System.currentTimeMillis() - heartbeat <= 25_000L
     }
 
     fun accessibilityEnabled(): Boolean {
         val manager = app.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
         return manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).any {
             it.resolveInfo.serviceInfo.packageName == app.packageName && it.resolveInfo.serviceInfo.name.endsWith(".ScrollAccessibilityService")
+        }
+    }
+
+    fun diagnosticSummary(): String {
+        val enabled = accessibilityEnabled()
+        val alive = serviceAlive()
+        val heartbeat = servicePrefs.getLong("heartbeat_wall_ms", 0L)
+        val heartbeatAge = if (heartbeat > 0L) ((System.currentTimeMillis() - heartbeat) / 1000L).coerceAtLeast(0L) else -1L
+        return buildString {
+            append("enabled=").append(enabled)
+            append(", alive=").append(alive)
+            append(", heartbeat_age_s=").append(heartbeatAge)
+            append(", connects=").append(servicePrefs.getInt("connect_count", 0))
+            append(", interrupts=").append(servicePrefs.getInt("interrupt_count", 0))
+            append(", disconnects=").append(servicePrefs.getInt("disconnect_count", 0))
+            append(", errors=").append(servicePrefs.getInt("error_count", 0))
+            servicePrefs.getString("last_error", null)?.let { append(", last_error=").append(it) }
         }
     }
 
@@ -153,8 +171,7 @@ class ProbeStore(context: Context) {
     }
 
     fun startTest(platform: TargetPlatform) {
-        ensureDay()
-        runCatching { traceFile.delete() }
+        ensureDay(); runCatching { traceFile.delete() }
         val editor = prefs.edit()
             .putString("test_id", UUID.randomUUID().toString())
             .putString("test_platform", platform.name)
@@ -198,20 +215,14 @@ class ProbeStore(context: Context) {
             .putString("stats_date", LocalDate.now().toString())
             .putInt("generation", next)
             .putString("last_event", "counters_reset")
-            .remove("test_platform")
-            .remove("test_id")
-            .remove("test_started")
-            .remove("test_start_count")
-            .remove("test_result")
+            .remove("test_platform").remove("test_id").remove("test_started").remove("test_start_count").remove("test_result")
             .putInt("diagnostic_event_count", 0)
         ProbeEventKind.entries.forEach { e.putInt("diagnostic_${it.name.lowercase()}_count", 0) }
         TargetPlatform.entries.forEach { p ->
             val k = p.name.lowercase()
-            e.putInt("${k}_count", 0)
-                .putLong("${k}_active_ms", 0L)
+            e.putInt("${k}_count", 0).putLong("${k}_active_ms", 0L)
                 .putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name)
-                .putString("${k}_reason", "none")
-                .putFloat("${k}_confidence", 0f)
+                .putString("${k}_reason", "none").putFloat("${k}_confidence", 0f)
         }
         e.commit()
     }
@@ -220,30 +231,21 @@ class ProbeStore(context: Context) {
         ensureDay(); val platforms = JSONArray()
         TargetPlatform.entries.forEach { p ->
             val s = stats(p)
-            platforms.put(
-                JSONObject()
-                    .put("platform", p.name)
-                    .put("package", p.packageName)
-                    .put("installed_version", installedVersion(p.packageName))
-                    .put("detected_videos", s.count)
-                    .put("active_seconds", s.activeSeconds)
-                    .put("state", s.state)
-                    .put("confidence", s.confidence)
-                    .put("reason", s.reason)
-            )
+            platforms.put(JSONObject().put("platform", p.name).put("package", p.packageName).put("installed_version", installedVersion(p.packageName)).put("detected_videos", s.count).put("active_seconds", s.activeSeconds).put("state", s.state).put("confidence", s.confidence).put("reason", s.reason))
         }
-        val counts = JSONObject()
-        ProbeEventKind.entries.forEach { counts.put(it.name, prefs.getInt("diagnostic_${it.name.lowercase()}_count", 0)) }
-        val enabled = accessibilityEnabled()
-        val alive = serviceAlive()
+        val counts = JSONObject(); ProbeEventKind.entries.forEach { counts.put(it.name, prefs.getInt("diagnostic_${it.name.lowercase()}_count", 0)) }
+        val enabled = accessibilityEnabled(); val alive = serviceAlive()
         return JSONObject()
-            .put("schema_version", 6)
+            .put("schema_version", 7)
             .put("local_date", LocalDate.now().toString())
             .put("generated_at", Instant.now().toString())
             .put("app_version", BuildConfig.VERSION_NAME)
             .put("automatic_counting", enabled && alive)
             .put("accessibility_service_enabled", enabled)
             .put("accessibility_service_alive", alive)
+            .put("service_connect_count", servicePrefs.getInt("connect_count", 0))
+            .put("service_interrupt_count", servicePrefs.getInt("interrupt_count", 0))
+            .put("service_disconnect_count", servicePrefs.getInt("disconnect_count", 0))
             .put("service_error_count", servicePrefs.getInt("error_count", 0))
             .put("service_last_error", servicePrefs.getString("last_error", null))
             .put("service_last_error_wall_ms", servicePrefs.getLong("last_error_wall_ms", 0L))
@@ -260,29 +262,22 @@ class ProbeStore(context: Context) {
     }
 
     private fun loadTrace(): JSONArray {
-        val array = JSONArray()
-        val lines = runCatching { if (traceFile.exists()) traceFile.readLines() else emptyList() }.getOrElse { emptyList() }
+        val array = JSONArray(); val lines = runCatching { if (traceFile.exists()) traceFile.readLines() else emptyList() }.getOrElse { emptyList() }
         lines.takeLast(200).forEach { line -> runCatching { array.put(JSONObject(line)) } }
         return array
     }
 
     private fun candidateTransitionsFromTrace(platform: TargetPlatform): Int {
-        var count = 0
-        var last = Long.MIN_VALUE
-        val trace = loadTrace()
+        var count = 0; var last = Long.MIN_VALUE; val trace = loadTrace()
         for (i in 0 until trace.length()) {
             val row = trace.optJSONObject(i) ?: continue
             if (row.optString("platform") != platform.name) continue
-            val kind = row.optString("kind")
-            val sourceId = row.optString("source_id")
+            val kind = row.optString("kind"); val sourceId = row.optString("source_id")
             val isCandidate = if (platform == TargetPlatform.YOUTUBE) {
-                kind == ProbeEventKind.CONTENT_CHANGED.name && sourceId.contains("reel_recycler", ignoreCase = true)
-            } else {
-                kind == ProbeEventKind.SCROLLED.name || kind == ProbeEventKind.VIEW_SELECTED.name
-            }
+                (kind == ProbeEventKind.CONTENT_CHANGED.name || kind == ProbeEventKind.SCROLLED.name) && sourceId.contains("reel_recycler", ignoreCase = true)
+            } else kind == ProbeEventKind.SCROLLED.name || kind == ProbeEventKind.VIEW_SELECTED.name
             if (!isCandidate) continue
-            val t = row.optLong("t", Long.MIN_VALUE)
-            val cooldown = if (platform == TargetPlatform.YOUTUBE) 500L else 320L
+            val t = row.optLong("t", Long.MIN_VALUE); val cooldown = if (platform == TargetPlatform.YOUTUBE) 750L else 320L
             if (last == Long.MIN_VALUE || t - last >= cooldown) { count += 1; last = t }
         }
         return count
@@ -301,17 +296,9 @@ class ProbeStore(context: Context) {
         runCatching { traceFile.delete() }
         val e = prefs.edit().putString("stats_date", today).putInt("generation", generation() + 1).remove("test_platform").remove("test_result").putInt("diagnostic_event_count", 0)
         ProbeEventKind.entries.forEach { e.putInt("diagnostic_${it.name.lowercase()}_count", 0) }
-        TargetPlatform.entries.forEach { p ->
-            val k = p.name.lowercase()
-            e.putInt("${k}_count", 0)
-                .putLong("${k}_active_ms", 0L)
-                .putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name)
-                .putString("${k}_reason", "none")
-                .putFloat("${k}_confidence", 0f)
-        }
+        TargetPlatform.entries.forEach { p -> val k = p.name.lowercase(); e.putInt("${k}_count", 0).putLong("${k}_active_ms", 0L).putString("${k}_state", DetectorState.OUTSIDE_TARGET_APP.name).putString("${k}_reason", "none").putFloat("${k}_confidence", 0f) }
         e.commit()
     }
 
-    @Suppress("DEPRECATION")
-    private fun installedVersion(packageName: String): String? = runCatching { app.packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
+    @Suppress("DEPRECATION") private fun installedVersion(packageName: String): String? = runCatching { app.packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
 }
