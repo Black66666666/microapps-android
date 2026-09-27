@@ -22,20 +22,28 @@ object AccessibilitySnapshotFactory {
         val action: Int
     )
 
-    fun from(event: AccessibilityEvent, root: AccessibilityNodeInfo?, metrics: DisplayMetrics): Snapshot {
+    fun from(
+        event: AccessibilityEvent,
+        root: AccessibilityNodeInfo?,
+        metrics: DisplayMetrics,
+        diagnostic: Boolean = false
+    ): Snapshot {
         val ids = linkedSetOf<String>()
         val classes = linkedSetOf<String>()
         var visited = 0
         var dominantScrollable = false
+        val maxNodes = if (diagnostic) 220 else 90
+        val maxDepth = if (diagnostic) 12 else 8
         val screenArea = (metrics.widthPixels.toLong() * metrics.heightPixels.toLong()).coerceAtLeast(1L)
         val eventClass = event.className?.toString()?.take(160)
         eventClass?.let { classes.add(it) }
+
         if (root != null) {
             val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
             queue.add(root to 0)
-            while (queue.isNotEmpty() && visited < 220) {
+            while (queue.isNotEmpty() && visited < maxNodes) {
                 val (node, depth) = queue.removeFirst()
-                if (depth > 12) continue
+                if (depth > maxDepth) continue
                 visited += 1
                 node.viewIdResourceName?.let { ids.add(it.take(180)) }
                 node.className?.toString()?.let { classes.add(it.take(160)) }
@@ -45,14 +53,18 @@ object AccessibilitySnapshotFactory {
                     val area = bounds.width().coerceAtLeast(0).toLong() * bounds.height().coerceAtLeast(0).toLong()
                     if (area.toDouble() / screenArea.toDouble() >= 0.48) dominantScrollable = true
                 }
-                for (i in 0 until node.childCount) node.getChild(i)?.let { queue.add(it to depth + 1) }
+                for (i in 0 until node.childCount) {
+                    node.getChild(i)?.let { queue.add(it to depth + 1) }
+                }
             }
         }
+
         val sourceId = event.source?.viewIdResourceName?.take(180)
         val sourceClass = event.source?.className?.toString()?.take(160)
         sourceId?.let { ids.add(it) }
         sourceClass?.let { classes.add(it) }
         val deltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0
+
         return Snapshot(
             event = ProbeEvent(
                 timestampMs = event.eventTime,
