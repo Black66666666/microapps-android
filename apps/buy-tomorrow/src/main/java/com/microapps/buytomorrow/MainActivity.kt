@@ -26,27 +26,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.microapps.designsystem.AppHeader
-import com.microapps.designsystem.GlassCard
-import com.microapps.designsystem.GradientButton
-import com.microapps.designsystem.NeonBackdrop
-import com.microapps.designsystem.NeonChip
-import com.microapps.designsystem.NeonCyan
-import com.microapps.designsystem.NeonGreen
-import com.microapps.designsystem.NeonOrange
-import com.microapps.designsystem.NeonTextField
-import com.microapps.designsystem.SecondaryButton
-import com.microapps.designsystem.SectionTitle
-import com.microapps.designsystem.StatusPill
-import com.microapps.designsystem.TextPrimary
-import com.microapps.designsystem.TextSecondary
-import com.microapps.designsystem.UnifiedAppTheme
+import com.microapps.designsystem.BuyTomorrowAccent
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviChip
+import com.microapps.designsystem.TaviGraphite
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSecondaryButton
+import com.microapps.designsystem.TaviSectionTitle
+import com.microapps.designsystem.TaviStatusPill
+import com.microapps.designsystem.TaviSuccess
+import com.microapps.designsystem.TaviTextField
+import com.microapps.designsystem.TaviTextSecondary
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
+import com.microapps.designsystem.TaviWarmOrange
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { UnifiedAppTheme { BuyTomorrowScreen() } }
+        setContent { TaviTheme { BuyTomorrowScreen() } }
     }
 }
 
@@ -62,64 +62,64 @@ private fun BuyTomorrowScreen() {
     fun updateStatus(target: Wish, status: String) { save(updateWishStatus(wishes, target.createdAt, status)) }
     val saved = savedAmount(wishes)
 
-    NeonBackdrop {
+    TaviScreen {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AppHeader(
-                icon = "🛒",
+            TaviTopBar(
                 title = "BuyTomorrow",
-                subtitle = "Пауза перед импульсивной покупкой"
+                subtitle = "Хорошие покупки начинаются с паузы",
+                accent = BuyTomorrowAccent
             )
 
-            GlassCard(Modifier.fillMaxWidth()) {
+            TaviCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Сохранено решениями", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                        Text("Сохранено решениями", color = TaviTextSecondary, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "Не потрачено: ${formatAmount(saved)}",
-                            color = TextPrimary,
+                            color = TaviGraphite,
                             style = MaterialTheme.typography.headlineSmall
                         )
                     }
-                    StatusPill(if (saved > 0) "Экономия" else "Старт", NeonGreen)
+                    TaviStatusPill(if (saved > 0) "Экономия" else "Старт", if (saved > 0) TaviSuccess else BuyTomorrowAccent)
                 }
             }
 
             if (wishes.isNotEmpty()) {
-                SectionTitle("Мои решения")
+                TaviSectionTitle("Мои решения")
                 wishes.sortedByDescending { it.createdAt }.forEach { wish ->
-                    GlassCard(Modifier.fillMaxWidth()) {
+                    TaviCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(Modifier.weight(1f)) {
-                                Text(wish.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                                Text(wish.name, color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     "${formatAmount(wish.amount)} · пауза ${wish.waitHours} ч",
-                                    color = TextSecondary,
+                                    color = TaviTextSecondary,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
                             when (wish.status) {
-                                "skipped" -> StatusPill("Передумал", NeonGreen)
-                                "bought" -> StatusPill("Куплено", NeonOrange)
-                                else -> StatusPill("Ждём", NeonCyan)
+                                "skipped" -> TaviStatusPill("Передумал", TaviSuccess)
+                                "bought" -> TaviStatusPill("Куплено", TaviWarmOrange)
+                                else -> TaviStatusPill("Ждём", BuyTomorrowAccent)
                             }
                         }
                         if (wish.status == "waiting") {
                             Spacer(Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                SecondaryButton(
+                                TaviSecondaryButton(
                                     text = "Передумал",
                                     modifier = Modifier.weight(1f),
                                     onClick = { updateStatus(wish, "skipped") }
                                 )
-                                SecondaryButton(
+                                TaviSecondaryButton(
                                     text = "Купил",
                                     modifier = Modifier.weight(1f),
                                     onClick = { updateStatus(wish, "bought") }
@@ -130,41 +130,44 @@ private fun BuyTomorrowScreen() {
                 }
             }
 
-            GlassCard(Modifier.fillMaxWidth()) {
-                SectionTitle("Новая покупка")
+            TaviCard(Modifier.fillMaxWidth()) {
+                TaviSectionTitle("Новая покупка")
                 Spacer(Modifier.height(10.dp))
-                NeonTextField(
+                TaviTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = "Что хочется купить",
+                    accent = BuyTomorrowAccent,
                     modifier = Modifier.fillMaxWidth().testTag("wish-name")
                 )
                 Spacer(Modifier.height(10.dp))
-                NeonTextField(
+                TaviTextField(
                     value = amount,
                     onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
                     label = "Цена",
+                    accent = BuyTomorrowAccent,
                     modifier = Modifier.fillMaxWidth().testTag("wish-price")
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Сколько подождать?", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                Text("Сколько подождать?", color = TaviTextSecondary, style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(24, 48, 72).forEach { hours ->
-                        NeonChip(
+                        TaviChip(
                             text = "${hours}ч",
                             selected = waitHours == hours,
+                            accent = BuyTomorrowAccent,
                             onClick = { waitHours = hours }
                         )
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                GradientButton(
+                TaviPrimaryButton(
                     text = "Отложить покупку",
-                    leading = "⏳",
+                    leading = "dot",
                     modifier = Modifier.fillMaxWidth().testTag("add-wish"),
                     onClick = {
-                        val value = amount.replace(',', '.').toDoubleOrNull() ?: return@GradientButton
+                        val value = amount.replace(',', '.').toDoubleOrNull() ?: return@TaviPrimaryButton
                         if (name.isNotBlank() && value >= 0) {
                             save(wishes + Wish(name.trim(), value, System.currentTimeMillis(), waitHours))
                             name = ""
@@ -174,9 +177,9 @@ private fun BuyTomorrowScreen() {
                 )
             }
 
-            GradientButton(
+            TaviPrimaryButton(
                 text = "Поделиться экономией",
-                leading = "↗",
+                leading = "dot",
                 modifier = Modifier.fillMaxWidth(),
                 enabled = saved > 0,
                 onClick = {

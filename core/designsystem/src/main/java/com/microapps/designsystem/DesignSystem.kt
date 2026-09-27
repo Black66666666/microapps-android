@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,115 +23,91 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val Night = Color(0xFF070B1F)
-val NightRaised = Color(0xFF10162F)
-val Glass = Color(0xFF172044)
-val NeonCyan = Color(0xFF31D9FF)
-val NeonBlue = Color(0xFF4B7BFF)
-val NeonPurple = Color(0xFF8E5CFF)
-val NeonPink = Color(0xFFFF4FD8)
-val NeonGreen = Color(0xFF43F4B2)
-val NeonOrange = Color(0xFFFFA64D)
-val TextPrimary = Color(0xFFF7F8FF)
-val TextSecondary = Color(0xFFAEB7D4)
+val TaviBackground = Color(0xFFF7F3EA)
+val TaviSurface = Color(0xFFFFFDF8)
+val TaviSurfaceMuted = Color(0xFFF1ECE3)
+val TaviGraphite = Color(0xFF20211F)
+val TaviTextSecondary = Color(0xFF73746F)
+val TaviBorder = Color(0xFFE7E1D7)
+val TaviLime = Color(0xFFB9F500)
+val TaviSuccess = Color(0xFF2F8D62)
+val TaviWarmOrange = Color(0xFFE98545)
 
-private val UnifiedScheme = darkColorScheme(
-    primary = NeonCyan,
-    secondary = NeonPurple,
-    tertiary = NeonPink,
-    background = Night,
-    surface = NightRaised,
-    surfaceVariant = Glass,
+val ScreenshotInboxAccent = Color(0xFFFF8252)
+val MatchChoiceAccent = Color(0xFFEF6F91)
+val WhoBringsWhatAccent = Color(0xFFE2A934)
+val BuyTomorrowAccent = Color(0xFF3E87F7)
+val MeetingMeterAccent = Color(0xFF8A5CE6)
+
+private val TaviScheme = lightColorScheme(
+    primary = TaviGraphite,
+    secondary = TaviLime,
+    tertiary = BuyTomorrowAccent,
+    background = TaviBackground,
+    surface = TaviSurface,
+    surfaceVariant = TaviSurfaceMuted,
     onPrimary = Color.White,
-    onSecondary = Color.White,
+    onSecondary = TaviGraphite,
     onTertiary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary
+    onBackground = TaviGraphite,
+    onSurface = TaviGraphite,
+    onSurfaceVariant = TaviTextSecondary,
+    outline = TaviBorder
 )
 
 @Composable
-fun UnifiedAppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = UnifiedScheme, content = content)
+fun TaviTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = TaviScheme, content = content)
 }
 
 @Composable
-fun NeonBackdrop(
+fun TaviScreen(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0B1030), Night, Color(0xFF080A1A))
-                )
-            )
-    ) {
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 90.dp, y = (-90).dp)
-                .size(250.dp)
-                .clip(CircleShape)
-                .background(NeonPurple.copy(alpha = 0.18f))
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-110).dp, y = 100.dp)
-                .size(280.dp)
-                .clip(CircleShape)
-                .background(NeonCyan.copy(alpha = 0.10f))
-        )
-        content()
-    }
+            .background(TaviBackground),
+        content = content
+    )
 }
 
 @Composable
-fun AppHeader(
-    icon: String,
+fun TaviTopBar(
     title: String,
     subtitle: String,
+    accent: Color = TaviLime,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(54.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Brush.linearGradient(listOf(NeonCyan, NeonPurple, NeonPink)))
-                .border(1.dp, Color.White.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(icon, fontSize = 26.sp)
-        }
+        TaviAppMark(accent = accent)
         Spacer(Modifier.width(14.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(
                 title,
-                color = TextPrimary,
+                color = TaviGraphite,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
+            Spacer(Modifier.height(2.dp))
             Text(
                 subtitle,
-                color = TextSecondary,
+                color = TaviTextSecondary,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -140,31 +115,48 @@ fun AppHeader(
 }
 
 @Composable
-fun GlassCard(
+fun TaviAppMark(
+    modifier: Modifier = Modifier,
+    accent: Color = TaviLime
+) {
+    Box(modifier = modifier.size(48.dp)) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(42.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(TaviGraphite)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(15.dp)
+                .clip(CircleShape)
+                .background(accent)
+                .border(2.dp, TaviBackground, CircleShape)
+        )
+    }
+}
+
+@Composable
+fun TaviCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = modifier
+            .shadow(2.dp, shape, clip = false)
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.10f),
-                        Glass.copy(alpha = 0.82f),
-                        NightRaised.copy(alpha = 0.92f)
-                    )
-                )
-            )
-            .border(1.dp, Color.White.copy(alpha = 0.13f), shape)
+            .background(TaviSurface)
+            .border(1.dp, TaviBorder, shape)
             .padding(16.dp),
         content = content
     )
 }
 
 @Composable
-fun GradientButton(
+fun TaviPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -172,29 +164,31 @@ fun GradientButton(
     leading: String? = null
 ) {
     val shape = RoundedCornerShape(18.dp)
-    val colors = if (enabled) {
-        listOf(NeonCyan, NeonBlue, NeonPurple, NeonPink)
-    } else {
-        listOf(Color(0xFF303857), Color(0xFF272E49))
-    }
+    val background = if (enabled) TaviGraphite else TaviSurfaceMuted
+    val foreground = if (enabled) Color.White else TaviTextSecondary.copy(alpha = 0.65f)
+
     Row(
         modifier = modifier
             .heightIn(min = 52.dp)
             .clip(shape)
-            .background(Brush.horizontalGradient(colors))
-            .border(1.dp, Color.White.copy(alpha = if (enabled) 0.30f else 0.10f), shape)
+            .background(background)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (leading != null) {
-            Text(leading, fontSize = 18.sp)
-            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(if (enabled) TaviLime else TaviTextSecondary.copy(alpha = 0.35f))
+            )
+            Spacer(Modifier.width(9.dp))
         }
         Text(
             text,
-            color = if (enabled) Color.White else TextSecondary,
+            color = foreground,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
         )
@@ -202,7 +196,7 @@ fun GradientButton(
 }
 
 @Composable
-fun SecondaryButton(
+fun TaviSecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -213,15 +207,15 @@ fun SecondaryButton(
         modifier = modifier
             .heightIn(min = 50.dp)
             .clip(shape)
-            .background(Color.White.copy(alpha = if (enabled) 0.06f else 0.03f))
-            .border(1.dp, Color.White.copy(alpha = if (enabled) 0.16f else 0.07f), shape)
+            .background(if (enabled) TaviSurface else TaviSurfaceMuted.copy(alpha = 0.7f))
+            .border(1.dp, if (enabled) TaviBorder else TaviBorder.copy(alpha = 0.6f), shape)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text,
-            color = if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.6f),
+            color = if (enabled) TaviGraphite else TaviTextSecondary.copy(alpha = 0.6f),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium
         )
@@ -229,13 +223,14 @@ fun SecondaryButton(
 }
 
 @Composable
-fun NeonTextField(
+fun TaviTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    accent: Color = TaviGraphite
 ) {
     OutlinedTextField(
         value = value,
@@ -246,45 +241,48 @@ fun NeonTextField(
         singleLine = singleLine,
         shape = RoundedCornerShape(18.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = TextPrimary,
-            unfocusedTextColor = TextPrimary,
-            disabledTextColor = TextSecondary,
-            focusedBorderColor = NeonCyan,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.14f),
-            disabledBorderColor = Color.White.copy(alpha = 0.08f),
-            focusedLabelColor = NeonCyan,
-            unfocusedLabelColor = TextSecondary,
-            cursorColor = NeonCyan,
-            focusedContainerColor = NightRaised.copy(alpha = 0.78f),
-            unfocusedContainerColor = NightRaised.copy(alpha = 0.68f),
-            disabledContainerColor = NightRaised.copy(alpha = 0.40f)
+            focusedTextColor = TaviGraphite,
+            unfocusedTextColor = TaviGraphite,
+            disabledTextColor = TaviTextSecondary,
+            focusedBorderColor = accent,
+            unfocusedBorderColor = TaviBorder,
+            disabledBorderColor = TaviBorder.copy(alpha = 0.6f),
+            focusedLabelColor = accent,
+            unfocusedLabelColor = TaviTextSecondary,
+            disabledLabelColor = TaviTextSecondary.copy(alpha = 0.7f),
+            cursorColor = TaviLime,
+            focusedContainerColor = TaviSurface,
+            unfocusedContainerColor = TaviSurface,
+            disabledContainerColor = TaviSurfaceMuted.copy(alpha = 0.72f)
         )
     )
 }
 
 @Composable
-fun NeonChip(
+fun TaviChip(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    accent: Color = TaviGraphite
 ) {
     val shape = RoundedCornerShape(50)
-    Box(
+    Row(
         modifier = modifier
             .clip(shape)
-            .background(
-                if (selected) Brush.horizontalGradient(listOf(NeonCyan, NeonPurple))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.06f)))
-            )
-            .border(1.dp, Color.White.copy(alpha = if (selected) 0.25f else 0.10f), shape)
+            .background(if (selected) accent else TaviSurface)
+            .border(1.dp, if (selected) accent else TaviBorder, shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
-        contentAlignment = Alignment.Center
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        if (selected) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(TaviLime))
+            Spacer(Modifier.width(7.dp))
+        }
         Text(
             text,
-            color = TextPrimary,
+            color = if (selected) Color.White else TaviGraphite,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
         )
@@ -292,44 +290,85 @@ fun NeonChip(
 }
 
 @Composable
-fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+fun TaviSectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         modifier = modifier,
-        color = TextPrimary,
+        color = TaviGraphite,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
     )
 }
 
 @Composable
-fun StatusPill(
+fun TaviStatusPill(
     text: String,
-    accent: Color = NeonGreen,
+    accent: Color = TaviLime,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(accent.copy(alpha = 0.12f))
+            .background(accent.copy(alpha = 0.14f))
             .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(accent))
         Spacer(Modifier.width(7.dp))
-        Text(text, color = accent, style = MaterialTheme.typography.labelMedium)
+        Text(
+            text,
+            color = TaviGraphite,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
 @Composable
-fun MetricCard(
+fun TaviHeroObjectFrame(
+    modifier: Modifier = Modifier,
+    accent: Color,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(64.dp)
+    Box(
+        modifier = modifier
+            .shadow(8.dp, shape, clip = false)
+            .clip(shape)
+            .background(TaviSurface)
+            .border(1.dp, TaviBorder, shape)
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(18.dp)
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(TaviLime)
+                .border(2.dp, TaviSurface, CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(20.dp)
+                .width(46.dp)
+                .height(6.dp)
+                .clip(RoundedCornerShape(50))
+                .background(accent.copy(alpha = 0.75f))
+        )
+        content()
+    }
+}
+
+@Composable
+fun TaviMetricCard(
     value: String,
     label: String,
     modifier: Modifier = Modifier,
-    accent: Color = NeonCyan
+    accent: Color = TaviGraphite
 ) {
-    GlassCard(modifier) {
+    TaviCard(modifier) {
         Text(
             value,
             color = accent,
@@ -337,6 +376,6 @@ fun MetricCard(
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(3.dp))
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+        Text(label, color = TaviTextSecondary, style = MaterialTheme.typography.bodySmall)
     }
 }

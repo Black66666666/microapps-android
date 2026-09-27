@@ -24,28 +24,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.microapps.designsystem.AppHeader
-import com.microapps.designsystem.GlassCard
-import com.microapps.designsystem.GradientButton
-import com.microapps.designsystem.NeonBackdrop
-import com.microapps.designsystem.NeonCyan
-import com.microapps.designsystem.NeonGreen
-import com.microapps.designsystem.NeonPink
-import com.microapps.designsystem.NeonTextField
-import com.microapps.designsystem.SecondaryButton
-import com.microapps.designsystem.SectionTitle
-import com.microapps.designsystem.StatusPill
-import com.microapps.designsystem.TextPrimary
-import com.microapps.designsystem.TextSecondary
-import com.microapps.designsystem.UnifiedAppTheme
+import com.microapps.designsystem.MatchChoiceAccent
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviGraphite
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSecondaryButton
+import com.microapps.designsystem.TaviSectionTitle
+import com.microapps.designsystem.TaviStatusPill
+import com.microapps.designsystem.TaviTextField
+import com.microapps.designsystem.TaviTextSecondary
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { UnifiedAppTheme { MatchChoiceScreen() } }
+        setContent { TaviTheme { MatchChoiceScreen() } }
     }
 }
 
@@ -62,61 +61,64 @@ private fun MatchChoiceScreen() {
 
     val options = rawOptions.lines().map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
-    NeonBackdrop {
+    TaviScreen {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AppHeader(
-                icon = "💞",
+            TaviTopBar(
                 title = "MatchChoice",
-                subtitle = "Выберите независимо — увидите только совпадения"
+                subtitle = "Выберите независимо — увидите только совпадения",
+                accent = MatchChoiceAccent
             )
 
             if (imported == null) {
-                GlassCard(Modifier.fillMaxWidth()) {
-                    StatusPill("Уже есть приглашение?", NeonCyan)
+                TaviCard(Modifier.fillMaxWidth()) {
+                    TaviStatusPill("Уже есть приглашение?", MatchChoiceAccent)
                     Spacer(Modifier.height(10.dp))
-                    NeonTextField(
+                    TaviTextField(
                         value = inviteCode,
                         onValueChange = { inviteCode = it.trim() },
                         label = "Код приглашения",
+                        accent = MatchChoiceAccent,
                         modifier = Modifier.fillMaxWidth().testTag("invite-code")
                     )
                     Spacer(Modifier.height(10.dp))
-                    GradientButton(
+                    TaviPrimaryButton(
                         text = "Открыть приглашение",
-                        leading = "✨",
+                        leading = "dot",
                         enabled = InviteCodec.decode(inviteCode) != null,
                         modifier = Modifier.fillMaxWidth().testTag("open-invite"),
                         onClick = { imported = InviteCodec.decode(inviteCode) }
                     )
                 }
 
-                GlassCard(Modifier.fillMaxWidth()) {
-                    SectionTitle("Создать свой выбор")
+                TaviCard(Modifier.fillMaxWidth()) {
+                    TaviSectionTitle("Создать свой выбор")
                     Spacer(Modifier.height(10.dp))
-                    NeonTextField(
+                    TaviTextField(
                         value = title,
                         onValueChange = { title = it },
                         label = "Вопрос",
+                        accent = MatchChoiceAccent,
                         modifier = Modifier.fillMaxWidth().testTag("title")
                     )
                     Spacer(Modifier.height(10.dp))
-                    NeonTextField(
+                    TaviTextField(
                         value = rawOptions,
                         onValueChange = { rawOptions = it },
                         label = "Варианты, по одному в строке",
+                        accent = MatchChoiceAccent,
                         modifier = Modifier.fillMaxWidth().testTag("options"),
                         singleLine = false
                     )
                 }
 
-                GlassCard(Modifier.fillMaxWidth()) {
-                    SectionTitle("Мой выбор")
+                TaviCard(Modifier.fillMaxWidth()) {
+                    TaviSectionTitle("Мой выбор")
                     Spacer(Modifier.height(8.dp))
                     options.forEach { option ->
                         Row(modifier = Modifier.fillMaxWidth()) {
@@ -124,9 +126,9 @@ private fun MatchChoiceScreen() {
                                 modifier = Modifier.testTag("creator-$option"),
                                 checked = option in creatorSelected,
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = NeonCyan,
-                                    uncheckedColor = TextSecondary,
-                                    checkmarkColor = com.microapps.designsystem.Night
+                                    checkedColor = MatchChoiceAccent,
+                                    uncheckedColor = TaviTextSecondary,
+                                    checkmarkColor = Color.White
                                 ),
                                 onCheckedChange = { checked ->
                                     creatorSelected = if (checked) creatorSelected + option else creatorSelected - option
@@ -135,15 +137,15 @@ private fun MatchChoiceScreen() {
                             Text(
                                 option,
                                 modifier = Modifier.padding(top = 12.dp),
-                                color = TextPrimary,
+                                color = TaviGraphite,
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    GradientButton(
+                    TaviPrimaryButton(
                         text = "Отправить другу",
-                        leading = "↗",
+                        leading = "dot",
                         modifier = Modifier.fillMaxWidth().testTag("share-invite"),
                         enabled = options.size >= 2 && creatorSelected.isNotEmpty(),
                         onClick = {
@@ -158,57 +160,58 @@ private fun MatchChoiceScreen() {
                 }
             } else {
                 val invite = imported!!
-                GlassCard(Modifier.fillMaxWidth()) {
-                    StatusPill("Выбор друга загружен", NeonGreen)
+                TaviCard(Modifier.fillMaxWidth()) {
+                    TaviStatusPill("Выбор друга загружен", MatchChoiceAccent)
                     Spacer(Modifier.height(12.dp))
-                    Text(invite.title, color = TextPrimary, style = MaterialTheme.typography.headlineSmall)
+                    Text(invite.title, color = TaviGraphite, style = MaterialTheme.typography.headlineSmall)
                     Spacer(Modifier.height(4.dp))
-                    Text("Отметь всё, что подходит тебе. Чужой выбор скрыт.", color = TextSecondary)
+                    Text("Отметь всё, что подходит тебе. Чужой выбор скрыт.", color = TaviTextSecondary)
                 }
 
-                GlassCard(Modifier.fillMaxWidth()) {
+                TaviCard(Modifier.fillMaxWidth()) {
                     invite.options.forEach { option ->
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Checkbox(
                                 modifier = Modifier.testTag("guest-$option"),
                                 checked = option in guestSelected,
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = NeonPink,
-                                    uncheckedColor = TextSecondary
+                                    checkedColor = MatchChoiceAccent,
+                                    uncheckedColor = TaviTextSecondary,
+                                    checkmarkColor = Color.White
                                 ),
                                 onCheckedChange = { checked ->
                                     guestSelected = if (checked) guestSelected + option else guestSelected - option
                                 }
                             )
-                            Text(option, modifier = Modifier.padding(top = 12.dp), color = TextPrimary)
+                            Text(option, modifier = Modifier.padding(top = 12.dp), color = TaviGraphite)
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    GradientButton(
+                    TaviPrimaryButton(
                         text = "Показать совпадения",
-                        leading = "✓",
+                        leading = "dot",
                         modifier = Modifier.fillMaxWidth().testTag("show-matches"),
                         onClick = { result = matchingChoices(invite.creator, guestSelected) }
                     )
                 }
 
                 if (result.isNotEmpty()) {
-                    GlassCard(Modifier.fillMaxWidth()) {
-                        StatusPill("Есть совпадение", NeonGreen)
+                    TaviCard(Modifier.fillMaxWidth()) {
+                        TaviStatusPill("Есть совпадение", MatchChoiceAccent)
                         Spacer(Modifier.height(10.dp))
                         Text(
                             "Совпало: ${result.joinToString()}",
-                            color = TextPrimary,
+                            color = TaviGraphite,
                             style = MaterialTheme.typography.headlineSmall
                         )
                     }
                 } else if (guestSelected.isNotEmpty()) {
-                    GlassCard(Modifier.fillMaxWidth()) {
-                        Text("Пока совпадений нет", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                    TaviCard(Modifier.fillMaxWidth()) {
+                        Text("Пока совпадений нет", color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
                     }
                 }
 
-                SecondaryButton(
+                TaviSecondaryButton(
                     text = "Создать свой выбор",
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { imported = null; guestSelected = emptySet(); result = emptyList() }

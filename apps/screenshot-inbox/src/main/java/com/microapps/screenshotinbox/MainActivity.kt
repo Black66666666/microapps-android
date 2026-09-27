@@ -34,23 +34,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.microapps.designsystem.AppHeader
-import com.microapps.designsystem.GlassCard
-import com.microapps.designsystem.GradientButton
-import com.microapps.designsystem.NeonBackdrop
-import com.microapps.designsystem.NeonCyan
-import com.microapps.designsystem.SecondaryButton
-import com.microapps.designsystem.StatusPill
-import com.microapps.designsystem.TextPrimary
-import com.microapps.designsystem.TextSecondary
-import com.microapps.designsystem.UnifiedAppTheme
+import com.microapps.designsystem.ScreenshotInboxAccent
+import com.microapps.designsystem.TaviCard
+import com.microapps.designsystem.TaviGraphite
+import com.microapps.designsystem.TaviPrimaryButton
+import com.microapps.designsystem.TaviScreen
+import com.microapps.designsystem.TaviSecondaryButton
+import com.microapps.designsystem.TaviStatusPill
+import com.microapps.designsystem.TaviTextSecondary
+import com.microapps.designsystem.TaviTheme
+import com.microapps.designsystem.TaviTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { UnifiedAppTheme { ScreenshotInboxScreen() } }
+        setContent { TaviTheme { ScreenshotInboxScreen() } }
     }
 }
 
@@ -77,74 +77,77 @@ private fun ScreenshotInboxScreen() {
         if (hasPermission) screenshots = loadScreenshots(context)
     }
 
-    NeonBackdrop {
+    TaviScreen {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp)
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)
         ) {
-            AppHeader(
-                icon = "🖼️",
+            TaviTopBar(
                 title = "Screenshot Inbox",
-                subtitle = "Разбери галерею без хаоса"
+                subtitle = "Сохраняет важное из хаоса",
+                accent = ScreenshotInboxAccent
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
 
             if (!hasPermission) {
-                GlassCard(Modifier.fillMaxWidth()) {
-                    StatusPill("Доступ к фото нужен один раз", NeonCyan)
+                TaviCard(Modifier.fillMaxWidth()) {
+                    TaviStatusPill("Доступ к фото нужен один раз", ScreenshotInboxAccent)
                     Spacer(Modifier.height(12.dp))
                     Text(
                         "Приложение находит только скриншоты и помогает разбирать их как входящие.",
-                        color = TextSecondary,
+                        color = TaviTextSecondary,
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(16.dp))
-                    GradientButton(
+                    TaviPrimaryButton(
                         text = "Разрешить доступ",
-                        leading = "✨",
+                        leading = "dot",
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { permissionLauncher.launch(permission) }
                     )
                 }
             } else {
-                GlassCard(Modifier.fillMaxWidth()) {
+                TaviCard(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
-                            Text("Входящие", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+                            Text("Входящие", color = TaviTextSecondary, style = MaterialTheme.typography.labelLarge)
                             Text(
                                 screenshots.size.toString(),
-                                color = TextPrimary,
+                                color = TaviGraphite,
                                 style = MaterialTheme.typography.displaySmall
                             )
                         }
-                        StatusPill(if (screenshots.isEmpty()) "Чисто" else "Нужно разобрать")
+                        TaviStatusPill(
+                            if (screenshots.isEmpty()) "Чисто" else "Нужно разобрать",
+                            ScreenshotInboxAccent
+                        )
                     }
                     Spacer(Modifier.height(12.dp))
-                    SecondaryButton(
+                    TaviSecondaryButton(
                         text = "Обновить",
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { refreshToken++ }
                     )
                 }
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
 
                 if (screenshots.isEmpty()) {
-                    GlassCard(Modifier.fillMaxWidth()) {
-                        Text("Входящие пусты 🎉", color = TextPrimary, style = MaterialTheme.typography.titleLarge)
+                    TaviCard(Modifier.fillMaxWidth()) {
+                        Text("Входящие пусты", color = TaviGraphite, style = MaterialTheme.typography.titleLarge)
                         Spacer(Modifier.height(6.dp))
-                        Text("Новых скриншотов для разбора нет.", color = TextSecondary)
+                        Text("Новых скриншотов для разбора нет.", color = TaviTextSecondary)
                     }
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(screenshots.take(50), key = { it.id }) { item ->
-                            GlassCard(Modifier.fillMaxWidth()) {
-                                Text(item.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                            TaviCard(Modifier.fillMaxWidth()) {
+                                Text(item.name, color = TaviGraphite, style = MaterialTheme.typography.titleMedium)
                                 Spacer(Modifier.height(4.dp))
-                                Text("Добавлен: ${item.dateAdded}", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                                Text("Добавлен: ${item.dateAdded}", color = TaviTextSecondary, style = MaterialTheme.typography.bodySmall)
                                 Spacer(Modifier.height(12.dp))
-                                SecondaryButton(
+                                TaviSecondaryButton(
                                     text = "Удалить",
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {

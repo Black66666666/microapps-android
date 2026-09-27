@@ -1,8 +1,8 @@
 # Legacy UI — Neon / Glass direction
 
-Status: **ARCHIVED / DO NOT USE FOR NEW WORK**.
+Status: **ARCHIVED / REMOVED FROM PRODUCTION UI**.
 
-This file records the previous visual direction so it is not lost, while making clear that it is no longer the product UI standard.
+This file records the previous visual direction so it is not lost. It is not an active implementation reference.
 
 ## Previous direction
 
@@ -15,11 +15,13 @@ The old shared design system used:
 - glowing decorative backgrounds;
 - components such as `NeonBackdrop`, `GlassCard`, `GradientButton`, `NeonTextField` and `NeonChip`.
 
-The implementation currently remains in:
+## Historical implementation
+
+Before the TAVI migration, the old implementation lived in:
 
 `core/designsystem/src/main/java/com/microapps/designsystem/DesignSystem.kt`
 
-It is kept temporarily only because existing Wave 1 apps still depend on it. Removing or moving that source file before the TAVI migration would break builds.
+Wave 1 used those neon-specific APIs directly. The TAVI migration removed the neon constants and component API from production code and migrated all five Wave 1 apps to the `Tavi*` shared components.
 
 ## Replacement
 
@@ -29,8 +31,10 @@ The active UI source of truth is:
 
 Brand: **TAVI — Pocket Objects**
 
-Direction: **Quiet Editorial / tactile objects / warm neutral surfaces / signature concave form / lime TAVI dot**.
+Direction: **Quiet Editorial / tactile objects / warm neutral surfaces / signature form / lime TAVI dot**.
 
-## Removal rule
+The active Android implementation lives in:
 
-Once all app modules are migrated to the TAVI implementation in `core/designsystem` and CI + emulator tests are green, the legacy neon-specific names and code should be deleted rather than preserved in production code.
+`core/designsystem/src/main/java/com/microapps/designsystem/DesignSystem.kt`
+
+Do not restore the legacy neon API. If a historical comparison is needed, use Git history.
