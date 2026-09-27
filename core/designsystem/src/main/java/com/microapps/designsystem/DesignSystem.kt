@@ -24,7 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,28 +35,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val Night = Color(0xFF070B1F)
-val NightRaised = Color(0xFF10162F)
-val Glass = Color(0xFF172044)
-val NeonCyan = Color(0xFF31D9FF)
-val NeonBlue = Color(0xFF4B7BFF)
-val NeonPurple = Color(0xFF8E5CFF)
-val NeonPink = Color(0xFFFF4FD8)
-val NeonGreen = Color(0xFF43F4B2)
-val NeonOrange = Color(0xFFFFA64D)
-val TextPrimary = Color(0xFFF7F8FF)
-val TextSecondary = Color(0xFFAEB7D4)
+// TAVI Pocket Objects shared design tokens.
+val Night = Color(0xFFF4F0E7)          // compatibility alias: warm neutral background
+val NightRaised = Color(0xFFFFFCF5)    // warm elevated surface
+val Glass = Color(0xFFF0EBE1)          // soft stone surface
+val NeonCyan = Color(0xFF2488F5)       // utility blue
+val NeonBlue = Color(0xFF2488F5)
+val NeonPurple = Color(0xFF8B4DE8)     // app purple
+val NeonPink = Color(0xFFFF6D3A)       // warm orange accent
+val NeonGreen = Color(0xFFB7F000)      // signature TAVI lime
+val NeonOrange = Color(0xFFFF7A3D)
+val TextPrimary = Color(0xFF191A18)    // graphite
+val TextSecondary = Color(0xFF666861)
+val TaviLime = NeonGreen
+val TaviGraphite = TextPrimary
+val TaviPaper = Night
+val TaviSurface = NightRaised
+val TaviBorder = Color(0xFFD9D3C7)
 
-private val UnifiedScheme = darkColorScheme(
-    primary = NeonCyan,
-    secondary = NeonPurple,
-    tertiary = NeonPink,
-    background = Night,
-    surface = NightRaised,
+private val UnifiedScheme = lightColorScheme(
+    primary = TaviGraphite,
+    secondary = TaviLime,
+    tertiary = NeonOrange,
+    background = TaviPaper,
+    surface = TaviSurface,
     surfaceVariant = Glass,
     onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
+    onSecondary = TaviGraphite,
+    onTertiary = TaviGraphite,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary
@@ -72,30 +78,22 @@ fun NeonBackdrop(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0B1030), Night, Color(0xFF080A1A))
-                )
-            )
-    ) {
+    Box(modifier = modifier.fillMaxSize().background(TaviPaper)) {
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 90.dp, y = (-90).dp)
-                .size(250.dp)
+                .offset(x = 90.dp, y = (-105).dp)
+                .size(245.dp)
                 .clip(CircleShape)
-                .background(NeonPurple.copy(alpha = 0.18f))
+                .background(Color.White.copy(alpha = 0.58f))
         )
         Box(
             Modifier
                 .align(Alignment.BottomStart)
-                .offset(x = (-110).dp, y = 100.dp)
-                .size(280.dp)
+                .offset(x = (-120).dp, y = 115.dp)
+                .size(270.dp)
                 .clip(CircleShape)
-                .background(NeonCyan.copy(alpha = 0.10f))
+                .background(Color(0xFFE6DED0).copy(alpha = 0.52f))
         )
         content()
     }
@@ -108,56 +106,42 @@ fun AppHeader(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(54.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(Brush.linearGradient(listOf(NeonCyan, NeonPurple, NeonPink)))
-                .border(1.dp, Color.White.copy(alpha = 0.28f), RoundedCornerShape(18.dp)),
+                .size(58.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFFF0E8DA))
+                .border(1.dp, TaviBorder, RoundedCornerShape(20.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text(icon, fontSize = 26.sp)
+            Text(icon, fontSize = 27.sp, color = TaviGraphite)
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 2.dp, y = (-2).dp)
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(TaviLime)
+                    .border(1.dp, Color(0xFF8DAE00), CircleShape)
+            )
         }
         Spacer(Modifier.width(14.dp))
         Column {
-            Text(
-                title,
-                color = TextPrimary,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                subtitle,
-                color = TextSecondary,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Text(title, color = TextPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
 @Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
+fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val shape = RoundedCornerShape(24.dp)
     Column(
         modifier = modifier
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.10f),
-                        Glass.copy(alpha = 0.82f),
-                        NightRaised.copy(alpha = 0.92f)
-                    )
-                )
-            )
-            .border(1.dp, Color.White.copy(alpha = 0.13f), shape)
+            .background(TaviSurface.copy(alpha = 0.96f))
+            .border(1.dp, TaviBorder, shape)
             .padding(16.dp),
         content = content
     )
@@ -172,32 +156,26 @@ fun GradientButton(
     leading: String? = null
 ) {
     val shape = RoundedCornerShape(18.dp)
-    val colors = if (enabled) {
-        listOf(NeonCyan, NeonBlue, NeonPurple, NeonPink)
-    } else {
-        listOf(Color(0xFF303857), Color(0xFF272E49))
-    }
     Row(
         modifier = modifier
             .heightIn(min = 52.dp)
             .clip(shape)
-            .background(Brush.horizontalGradient(colors))
-            .border(1.dp, Color.White.copy(alpha = if (enabled) 0.30f else 0.10f), shape)
+            .background(if (enabled) TaviGraphite else Color(0xFFD7D2C8))
+            .border(1.dp, if (enabled) TaviGraphite else TaviBorder, shape)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (leading != null) {
-            Text(leading, fontSize = 18.sp)
+            Text(leading, fontSize = 18.sp, color = if (enabled) Color.White else TextSecondary)
             Spacer(Modifier.width(8.dp))
         }
-        Text(
-            text,
-            color = if (enabled) Color.White else TextSecondary,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold
-        )
+        Text(text, color = if (enabled) Color.White else TextSecondary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        if (enabled) {
+            Spacer(Modifier.width(9.dp))
+            Box(Modifier.size(8.dp).clip(CircleShape).background(TaviLime))
+        }
     }
 }
 
@@ -213,18 +191,13 @@ fun SecondaryButton(
         modifier = modifier
             .heightIn(min = 50.dp)
             .clip(shape)
-            .background(Color.White.copy(alpha = if (enabled) 0.06f else 0.03f))
-            .border(1.dp, Color.White.copy(alpha = if (enabled) 0.16f else 0.07f), shape)
+            .background(if (enabled) TaviSurface else Glass.copy(alpha = 0.7f))
+            .border(1.dp, if (enabled) TaviGraphite.copy(alpha = 0.22f) else TaviBorder, shape)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text,
-            color = if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.6f),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Medium
-        )
+        Text(text, color = if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.65f), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -249,93 +222,63 @@ fun NeonTextField(
             focusedTextColor = TextPrimary,
             unfocusedTextColor = TextPrimary,
             disabledTextColor = TextSecondary,
-            focusedBorderColor = NeonCyan,
-            unfocusedBorderColor = Color.White.copy(alpha = 0.14f),
-            disabledBorderColor = Color.White.copy(alpha = 0.08f),
-            focusedLabelColor = NeonCyan,
+            focusedBorderColor = TaviGraphite,
+            unfocusedBorderColor = TaviBorder,
+            disabledBorderColor = TaviBorder.copy(alpha = 0.65f),
+            focusedLabelColor = TaviGraphite,
             unfocusedLabelColor = TextSecondary,
-            cursorColor = NeonCyan,
-            focusedContainerColor = NightRaised.copy(alpha = 0.78f),
-            unfocusedContainerColor = NightRaised.copy(alpha = 0.68f),
-            disabledContainerColor = NightRaised.copy(alpha = 0.40f)
+            cursorColor = TaviGraphite,
+            focusedContainerColor = TaviSurface,
+            unfocusedContainerColor = TaviSurface,
+            disabledContainerColor = Glass.copy(alpha = 0.65f)
         )
     )
 }
 
 @Composable
-fun NeonChip(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun NeonChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
             .clip(shape)
-            .background(
-                if (selected) Brush.horizontalGradient(listOf(NeonCyan, NeonPurple))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.06f)))
-            )
-            .border(1.dp, Color.White.copy(alpha = if (selected) 0.25f else 0.10f), shape)
+            .background(if (selected) TaviLime else TaviSurface)
+            .border(1.dp, if (selected) Color(0xFF95BA00) else TaviBorder, shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text,
-            color = TextPrimary,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-        )
+        Text(text, color = TextPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
     }
 }
 
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        modifier = modifier,
-        color = TextPrimary,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
-    )
+    Text(text, modifier = modifier, color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 }
 
 @Composable
-fun StatusPill(
-    text: String,
-    accent: Color = NeonGreen,
-    modifier: Modifier = Modifier
-) {
+fun StatusPill(text: String, accent: Color = NeonGreen, modifier: Modifier = Modifier) {
+    val textColor = if (accent == NeonGreen) TaviGraphite else accent
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(accent.copy(alpha = 0.12f))
-            .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(50))
+            .background(accent.copy(alpha = if (accent == NeonGreen) 0.78f else 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.75f), RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(accent))
+        Box(Modifier.size(7.dp).clip(CircleShape).background(if (accent == NeonGreen) TaviGraphite else accent))
         Spacer(Modifier.width(7.dp))
-        Text(text, color = accent, style = MaterialTheme.typography.labelMedium)
+        Text(text, color = textColor, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
     }
 }
 
 @Composable
-fun MetricCard(
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier,
-    accent: Color = NeonCyan
-) {
+fun MetricCard(value: String, label: String, modifier: Modifier = Modifier, accent: Color = NeonCyan) {
     GlassCard(modifier) {
-        Text(
-            value,
-            color = accent,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Box(Modifier.size(11.dp).clip(CircleShape).background(accent))
+        Spacer(Modifier.height(8.dp))
+        Text(value, color = TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(3.dp))
         Text(label, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
     }
