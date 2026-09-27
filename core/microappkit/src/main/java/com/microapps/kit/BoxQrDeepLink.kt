@@ -17,10 +17,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 
-fun boxIdFromUri(uri: Uri?): String? {
-    if (uri == null || uri.scheme != "boxqr" || uri.host != "box") return null
-    return uri.pathSegments.firstOrNull()?.takeIf { it.isNotBlank() }
+fun boxIdFromLink(link: String?): String? {
+    if (link == null || !link.startsWith("boxqr://box/")) return null
+    return link.removePrefix("boxqr://box/").substringBefore('?').substringBefore('#').takeIf { it.isNotBlank() && !it.contains('/') }
 }
+
+fun boxIdFromUri(uri: Uri?): String? = boxIdFromLink(uri?.toString())
 
 @Composable
 fun BoxQrDeepLinkScreen(initialBoxId: String? = null) {
