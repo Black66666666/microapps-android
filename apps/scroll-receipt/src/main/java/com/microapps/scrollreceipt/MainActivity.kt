@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
 data class UiState(
     val permissionEnabled: Boolean,
     val serviceAlive: Boolean,
+    val diagnosticSummary: String,
     val tik: ProbeStore.PlatformStats,
     val reels: ProbeStore.PlatformStats,
     val shorts: ProbeStore.PlatformStats,
@@ -86,6 +87,10 @@ data class UiState(
                     ui.permissionEnabled -> GradientButton(stringResource(R.string.restart_counting), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
                     else -> GradientButton(stringResource(R.string.enable_counting), { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }, Modifier.fillMaxWidth())
                 }
+                if (!ui.enabled && ui.permissionEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(ui.diagnosticSummary, color = NeonOrange, style = MaterialTheme.typography.labelSmall)
+                }
             }
             GlassCard(Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.today), color = NeonCyan, fontWeight = FontWeight.Bold)
@@ -104,7 +109,10 @@ data class UiState(
             GlassCard(Modifier.fillMaxWidth()) { SectionTitle(stringResource(R.string.how_it_works)); Text(stringResource(R.string.always_on_explainer), color = TextSecondary, style = MaterialTheme.typography.bodyMedium) }
             SecondaryButton(if (diagnostics) stringResource(R.string.hide_diagnostics) else stringResource(R.string.show_diagnostics), { diagnostics = !diagnostics }, Modifier.fillMaxWidth())
             if (diagnostics) GlassCard(Modifier.fillMaxWidth()) {
-                SectionTitle(stringResource(R.string.diagnostics_title)); Text(stringResource(R.string.diagnostics_explainer), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                SectionTitle(stringResource(R.string.diagnostics_title))
+                Text(ui.diagnosticSummary, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.diagnostics_explainer), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(10.dp)); Text(ui.test?.let { stringResource(R.string.active_test, platformName(it)) } ?: stringResource(R.string.no_active_test), color = NeonCyan)
                 Spacer(Modifier.height(8.dp)); SecondaryButton(stringResource(R.string.start_tiktok), { startTest(context, store, TargetPlatform.TIKTOK) }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(6.dp)); SecondaryButton(stringResource(R.string.start_instagram), { startTest(context, store, TargetPlatform.INSTAGRAM) }, Modifier.fillMaxWidth())
@@ -126,6 +134,7 @@ data class UiState(
 private fun snapshot(store: ProbeStore) = UiState(
     permissionEnabled = store.accessibilityEnabled(),
     serviceAlive = store.serviceAlive(),
+    diagnosticSummary = store.diagnosticSummary(),
     tik = store.stats(TargetPlatform.TIKTOK),
     reels = store.stats(TargetPlatform.INSTAGRAM),
     shorts = store.stats(TargetPlatform.YOUTUBE),
@@ -162,9 +171,7 @@ private fun startTest(context: Context, store: ProbeStore, platform: TargetPlatf
 }
 
 @Composable private fun duration(s: Long): String {
-    val h = s / 3600
-    val m = (s % 3600) / 60
-    val sec = s % 60
+    val h = s / 3600; val m = (s % 3600) / 60; val sec = s % 60
     return when {
         h > 0 -> stringResource(R.string.duration_hours_minutes, h, m)
         m > 0 -> stringResource(R.string.duration_minutes_seconds, m, sec)
