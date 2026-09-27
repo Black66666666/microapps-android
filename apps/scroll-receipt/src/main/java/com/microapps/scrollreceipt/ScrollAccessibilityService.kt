@@ -49,8 +49,9 @@ class ScrollAccessibilityService : AccessibilityService() {
         val snapshot = AccessibilitySnapshotFactory.from(event, rootInActiveWindow, resources.displayMetrics)
         val decision = engine.process(snapshot.event) ?: return
         store.update(decision)
+        store.recordSnapshot(snapshot, decision)
         if (screenOn && decision.activeForTiming) switchTiming(platform) else { flushTime(); timingPlatform = null }
-        store.setLastEvent("${decision.platform.name}/${snapshot.event.kind}/${decision.state}/inc=${decision.increment}/nodes=${snapshot.nodes}")
+        store.setLastEvent("${decision.platform.name}/${snapshot.event.kind}/${decision.state}/inc=${decision.increment}/nodes=${snapshot.nodes}/class=${snapshot.eventClass ?: "-"}")
     }
     override fun onInterrupt() { flushTime(); timingPlatform = null }
     override fun onDestroy() { handler.removeCallbacks(ticker); flushTime(); runCatching { unregisterReceiver(screenReceiver) }; super.onDestroy() }
