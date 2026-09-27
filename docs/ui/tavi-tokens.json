@@ -1,0 +1,52 @@
+{
+  "brand": {
+    "name": "TAVI",
+    "descriptor": "Pocket Objects",
+    "direction": "Quiet Editorial",
+    "signatureDot": "#B9F500"
+  },
+  "color": {
+    "background": "#F7F3EA",
+    "surface": "#FFFDF8",
+    "surfaceMuted": "#F1ECE3",
+    "graphite": "#20211F",
+    "textPrimary": "#20211F",
+    "textSecondary": "#73746F",
+    "border": "#E7E1D7",
+    "lime": "#B9F500",
+    "screenshotInbox": "#FF8252",
+    "buyTomorrow": "#3E87F7",
+    "meetingMeter": "#8A5CE6"
+  },
+  "radiusDp": {
+    "small": 14,
+    "standard": 20,
+    "large": 28,
+    "pill": 999
+  },
+  "spacingDp": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 32
+  },
+  "screen": {
+    "horizontalPaddingDp": 24,
+    "sectionGapMinDp": 24,
+    "sectionGapMaxDp": 32,
+    "minimumTouchTargetDp": 48
+  },
+  "motion": {
+    "character": "short-physical-calm",
+    "states": ["rest", "motion", "progress", "result"],
+    "decorativeBounce": false
+  },
+  "depth": {
+    "glassmorphism": false,
+    "neonDefault": false,
+    "hero3dPerPrimaryScreen": 1,
+    "shadow": "subtle"
+  }
+}
