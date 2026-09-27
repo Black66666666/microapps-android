@@ -12,8 +12,8 @@ android {
         applicationId = "com.microapps.scrollreceipt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.3.4-gate0a"
+        versionCode = 8
+        versionName = "0.3.5-gate0a"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
