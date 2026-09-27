@@ -1,0 +1,1 @@
+Complete Scroll Receipt, WorthIt, BorrowBack, BoxQR, Refill, TurnKeeper, FiveMinutes, ReturnClock, WhereIsIt, OpenedOn, PackTogether, Promise, GiftPocket, BeforeLeave and FairPick. Do not apply old visual design. Add distinct launcher icon resources to each module.
