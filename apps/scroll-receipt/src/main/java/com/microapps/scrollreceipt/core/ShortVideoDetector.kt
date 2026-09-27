@@ -6,8 +6,9 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
         TargetPlatform.INSTAGRAM -> setOf("reel", "reels", "clips", "clips_viewer", "reels_viewer")
         TargetPlatform.YOUTUBE -> setOf("shorts", "reel", "reel_watch", "shorts_player")
     }
-    private val pauseHints = setOf("comment", "comments", "profile", "settings", "search", "bottom_sheet", "dialog")
+    private val pauseHints = setOf("comment", "comments", "bottom_sheet", "dialog")
     private val modeThreshold = if (platform == TargetPlatform.TIKTOK) 0.60 else 0.68
+    private val transitionCooldownMs = if (platform == TargetPlatform.YOUTUBE) 220L else 450L
     private var state = DetectorState.OUTSIDE_TARGET_APP
     private var evidenceCount = 0
     private var lastStrongModeAt = 0L
@@ -29,13 +30,17 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
             firstVideoSeen = false
             return decision(0, 0.0, "different package", false)
         }
+
         val tokens = (event.viewIds + event.classNames).map { it.lowercase() }.toSet()
-        val overlay = pauseHints.any { hint -> tokens.any { it.contains(hint) } }
+        val sourceTokens = listOfNotNull(event.sourceId, event.sourceClass, event.eventClass).map { it.lowercase() }
+        val overlay = pauseHints.any { hint -> sourceTokens.any { it.contains(hint) } }
         val confidence = confidence(event, tokens)
+
         if (overlay && state == DetectorState.SHORT_MODE_ACTIVE) {
             state = DetectorState.PAUSED
-            return decision(0, confidence, "overlay/profile-like UI", false)
+            return decision(0, confidence, "foreground overlay", false)
         }
+
         if (confidence >= modeThreshold) {
             lastStrongModeAt = event.timestampMs
             if (state == DetectorState.PAUSED) {
@@ -55,19 +60,15 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
                 }
             }
             if (state == DetectorState.SHORT_MODE_ACTIVE && isTransition(event, tokens)) {
-                if (event.timestampMs - lastCountAt >= 450L) {
+                if (event.timestampMs - lastCountAt >= transitionCooldownMs) {
                     lastCountAt = event.timestampMs
-                    val reason = if (platform == TargetPlatform.YOUTUBE && isYoutubePlaybackBoundary(event, tokens)) {
-                        "YouTube Shorts playback boundary"
-                    } else {
-                        "new short-video transition"
-                    }
-                    return decision(1, confidence, reason, true)
+                    return decision(1, confidence, if (platform == TargetPlatform.YOUTUBE) "YouTube reel recycler changed" else "new short-video transition", true)
                 }
                 return decision(0, confidence, "duplicate transition event ignored", true)
             }
             return decision(0, confidence, "short mode active", true)
         }
+
         if (state == DetectorState.SHORT_MODE_ACTIVE || state == DetectorState.PAUSED) {
             val canLeave = event.kind == ProbeEventKind.WINDOW_CHANGED || event.kind == ProbeEventKind.WINDOWS_CHANGED || event.kind == ProbeEventKind.CONTENT_CHANGED
             if (canLeave && event.timestampMs - lastStrongModeAt >= 2500L) {
@@ -98,7 +99,11 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
     }
 
     private fun isTransition(event: ProbeEvent, tokens: Set<String>): Boolean {
-        if (platform == TargetPlatform.YOUTUBE && isYoutubePlaybackBoundary(event, tokens)) return true
+        if (platform == TargetPlatform.YOUTUBE) {
+            return event.kind == ProbeEventKind.CONTENT_CHANGED &&
+                event.sourceId?.contains("reel_recycler", ignoreCase = true) == true &&
+                youtubeShortUi(tokens)
+        }
         if (event.kind != ProbeEventKind.SCROLLED && event.kind != ProbeEventKind.VIEW_SELECTED) return false
         val indexChanged = event.fromIndex >= 0 && event.toIndex >= 0 && event.fromIndex != event.toIndex
         return indexChanged || kotlin.math.abs(event.scrollDeltaY) >= 160 || (event.dominantFullScreenScrollable && meaningfulScroll(event))
@@ -108,11 +113,6 @@ class ShortVideoDetector(private val platform: TargetPlatform) {
         val hasReelRecycler = tokens.any { it.contains("reel_recycler") }
         val hasPlayerPage = tokens.any { it.contains("reel_player_page_container") }
         return hasReelRecycler && hasPlayerPage
-    }
-
-    private fun isYoutubePlaybackBoundary(event: ProbeEvent, tokens: Set<String>): Boolean {
-        if (event.kind != ProbeEventKind.CONTENT_CHANGED || !youtubeShortUi(tokens)) return false
-        return event.eventClass?.equals("android.widget.SeekBar", ignoreCase = true) == true
     }
 
     private fun meaningfulScroll(event: ProbeEvent) = kotlin.math.abs(event.scrollDeltaY) >= 80 || event.maxScrollY > 0 || event.fromIndex != event.toIndex
