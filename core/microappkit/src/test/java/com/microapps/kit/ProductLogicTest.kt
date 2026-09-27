@@ -34,4 +34,11 @@ class ProductLogicTest {
         val index = chooseFair(people, 0)!!
         assertTrue(index == 1 || index == 2)
     }
+
+    @Test fun boxQrLinkOpensOnlyValidBoxScheme() {
+        assertEquals("abc-123", boxIdFromLink("boxqr://box/abc-123"))
+        assertEquals("abc-123", boxIdFromLink("boxqr://box/abc-123?source=qr"))
+        assertNull(boxIdFromLink("https://example.com/box/abc-123"))
+        assertNull(boxIdFromLink("boxqr://box/a/b"))
+    }
 }
