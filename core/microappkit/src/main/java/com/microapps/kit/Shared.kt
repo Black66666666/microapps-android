@@ -127,11 +127,16 @@ internal fun PrimaryAction(text: String, enabled: Boolean = true, onClick: () ->
 }
 
 @Composable
-internal fun SecondaryAction(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun SecondaryAction(
+    text: String,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onClick: () -> Unit
+) {
     TaviSecondaryButton(
         text = text,
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
     )
 }
