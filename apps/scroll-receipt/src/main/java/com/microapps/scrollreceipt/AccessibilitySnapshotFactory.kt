@@ -32,18 +32,19 @@ object AccessibilitySnapshotFactory {
         val classes = linkedSetOf<String>()
         var visited = 0
         var dominantScrollable = false
-        val maxNodes = if (diagnostic) 220 else 90
-        val maxDepth = if (diagnostic) 12 else 8
         val screenArea = (metrics.widthPixels.toLong() * metrics.heightPixels.toLong()).coerceAtLeast(1L)
         val eventClass = event.className?.toString()?.take(160)
         eventClass?.let { classes.add(it) }
 
-        if (root != null) {
+        // Normal counting deliberately avoids walking the accessibility tree. On some
+        // vendor builds (notably older MIUI) repeated cross-process node traversal can
+        // make an AccessibilityService unstable. Full traversal is diagnostic-only.
+        if (diagnostic && root != null) {
             val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
             queue.add(root to 0)
-            while (queue.isNotEmpty() && visited < maxNodes) {
+            while (queue.isNotEmpty() && visited < 220) {
                 val (node, depth) = queue.removeFirst()
-                if (depth > maxDepth) continue
+                if (depth > 12) continue
                 visited += 1
                 node.viewIdResourceName?.let { ids.add(it.take(180)) }
                 node.className?.toString()?.let { classes.add(it.take(160)) }
@@ -53,18 +54,25 @@ object AccessibilitySnapshotFactory {
                     val area = bounds.width().coerceAtLeast(0).toLong() * bounds.height().coerceAtLeast(0).toLong()
                     if (area.toDouble() / screenArea.toDouble() >= 0.48) dominantScrollable = true
                 }
-                for (i in 0 until node.childCount) {
-                    node.getChild(i)?.let { queue.add(it to depth + 1) }
-                }
+                for (i in 0 until node.childCount) node.getChild(i)?.let { queue.add(it to depth + 1) }
             }
         }
 
-        val sourceId = event.source?.viewIdResourceName?.take(180)
-        val sourceClass = event.source?.className?.toString()?.take(160)
+        val source = runCatching { event.source }.getOrNull()
+        val sourceId = runCatching { source?.viewIdResourceName?.take(180) }.getOrNull()
+        val sourceClass = runCatching { source?.className?.toString()?.take(160) }.getOrNull()
         sourceId?.let { ids.add(it) }
         sourceClass?.let { classes.add(it) }
-        val deltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0
 
+        if (!diagnostic && source != null && runCatching { source.isScrollable }.getOrDefault(false)) {
+            val bounds = Rect()
+            runCatching { source.getBoundsInScreen(bounds) }
+            val area = bounds.width().coerceAtLeast(0).toLong() * bounds.height().coerceAtLeast(0).toLong()
+            dominantScrollable = area.toDouble() / screenArea.toDouble() >= 0.48
+            visited = 1
+        }
+
+        val deltaY = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) event.scrollDeltaY else 0
         return Snapshot(
             event = ProbeEvent(
                 timestampMs = event.eventTime,
