@@ -14,7 +14,11 @@
     "textSecondary": "#73746F",
     "border": "#E7E1D7",
     "lime": "#B9F500",
+    "success": "#2F8D62",
+    "warmOrange": "#E98545",
     "screenshotInbox": "#FF8252",
+    "matchChoice": "#EF6F91",
+    "whoBringsWhat": "#E2A934",
     "buyTomorrow": "#3E87F7",
     "meetingMeter": "#8A5CE6"
   },
@@ -22,6 +26,7 @@
     "small": 14,
     "standard": 20,
     "large": 28,
+    "hero": 64,
     "pill": 999
   },
   "spacingDp": {
