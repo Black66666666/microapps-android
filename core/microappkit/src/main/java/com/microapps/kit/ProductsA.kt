@@ -7,11 +7,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.Settings
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -135,19 +132,11 @@ fun BorrowBackScreen() {
                 if (item.optString("due").isNotBlank()) Text("Срок: ${item.optString("due")}")
                 Text(if (item.optBoolean("returned")) "Возвращено" else "Ещё не вернули")
                 if (!item.optBoolean("returned")) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SecondaryAction(
-                            text = "Напомнить",
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            shareText(context, "Привет! Напоминаю про ${item.optString("thing")}, которое я тебе одолжил${if (item.optString("due").isNotBlank()) " до ${item.optString("due")}" else ""}.")
-                        }
-                        SecondaryAction(
-                            text = "Вернули",
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            val next = JSONArray(items.toString()); next.getJSONObject(i).put("returned", true); save(next)
-                        }
+                    SecondaryAction("Напомнить") {
+                        shareText(context, "Привет! Напоминаю про ${item.optString("thing")}, которое я тебе одолжил${if (item.optString("due").isNotBlank()) " до ${item.optString("due")}" else ""}.")
+                    }
+                    SecondaryAction("Вернули") {
+                        val next = JSONArray(items.toString()); next.getJSONObject(i).put("returned", true); save(next)
                     }
                 }
             }
